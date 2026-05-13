@@ -1,0 +1,27 @@
+{
+  "name": "canelo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tienda dietetica con carrito y pedido por WhatsApp",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "dietetica",
+    "react",
+    "vite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.10"
+  }
+}

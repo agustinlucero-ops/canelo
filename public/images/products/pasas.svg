@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
+  <rect width="320" height="240" fill="#f1e8e9" />
+  <circle cx="84" cy="128" r="24" fill="#69385f" />
+  <circle cx="138" cy="106" r="26" fill="#5c2f53" />
+  <circle cx="194" cy="126" r="24" fill="#7b446f" />
+  <circle cx="246" cy="108" r="22" fill="#4e2947" />
+  <text x="160" y="210" text-anchor="middle" font-size="24" fill="#4d2947" font-family="Arial">Pasas</text>
+</svg>
