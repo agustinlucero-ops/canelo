@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
+import { normalizeProductName } from "../utils/productName";
 
 export default function ProductCard({ product, onAddToCart }) {
   const [selectedPresentation, setSelectedPresentation] = useState(
@@ -19,6 +20,11 @@ export default function ProductCard({ product, onAddToCart }) {
     [product.presentations, selectedPresentation]
   );
 
+  const displayName = useMemo(
+    () => normalizeProductName(product.name, product.category),
+    [product.category, product.name]
+  );
+
   const handleAdd = () => {
     if (product.outOfStock) return;
     onAddToCart(product, currentPresentation);
@@ -28,14 +34,22 @@ export default function ProductCard({ product, onAddToCart }) {
     <article className="product-card">
       <img
         src={product.image}
-        alt={product.name}
+        alt={displayName}
         className="product-image"
         loading="lazy"
       />
       <div className="product-content">
-        <span className="product-category">{product.category}</span>
-        {product.outOfStock && <span className="stock-badge">Sin stock</span>}
-        <h3>{product.name}</h3>
+        {(product.isVegan || product.outOfStock) && (
+          <div className="product-badges">
+            {product.isVegan && (
+              <span className="vegan-badge" aria-label="Producto vegano">
+                Vegano
+              </span>
+            )}
+            {product.outOfStock && <span className="stock-badge">Sin stock</span>}
+          </div>
+        )}
+        <h3>{displayName}</h3>
         <p className="product-price">{formatPrice(currentPresentation.price)}</p>
 
         <QuantitySelector

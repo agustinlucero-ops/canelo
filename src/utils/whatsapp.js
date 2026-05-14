@@ -5,7 +5,10 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat("es-AR", {
 });
 
 export function formatPrice(value) {
-  return CURRENCY_FORMATTER.format(value);
+  return CURRENCY_FORMATTER.formatToParts(value)
+    .filter((part) => !(part.type === "literal" && part.value.trim() === ""))
+    .map((part) => part.value)
+    .join("");
 }
 
 export function buildWhatsAppMessage({ storeName, customerName, customerPhone, items, totals }) {

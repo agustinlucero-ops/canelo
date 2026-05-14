@@ -177,28 +177,28 @@
   },
   {
     "id": "cuca-tradicional",
-    "name": "Granola CUCA tradicional",
+    "name": "CUCA tradicional",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 10300 }]
   },
   {
     "id": "cuca-cacao-coco",
-    "name": "Granola CUCA cacao y coco",
+    "name": "CUCA cacao y coco",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 10300 }]
   },
   {
     "id": "tutti-grani-almendra",
-    "name": "Granola Tutti Grani almendra",
+    "name": "TUTTI GRANI almendra",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 9800 }]
   },
   {
     "id": "tutti-grani-tradicional",
-    "name": "Granola Tutti Grani tradicional",
+    "name": "TUTTI GRANI tradicional",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 9800 }]
@@ -206,14 +206,16 @@
   {
     "id": "cuca-vegana-stevia",
     "name": "Granola CUCA vegana con stevia",
-    "category": "Veganos",
+    "category": "Granolas",
+    "isVegan": true,
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 10300 }]
   },
   {
     "id": "tutti-grani-stevia-vegana",
-    "name": "Granola Tutti Grani stevia vegana",
-    "category": "Veganos",
+    "name": "Granola TUTTI GRANI stevia vegana",
+    "category": "Granolas",
+    "isVegan": true,
     "image": "/images/products/granola.svg",
     "presentations": [{ "label": "1kg", "price": 9800 }]
   },
@@ -383,7 +385,7 @@
   {
     "id": "aritos-frutados",
     "name": "Aritos frutados",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 1800 },
@@ -393,7 +395,7 @@
   {
     "id": "copos-maiz-sin-azucar",
     "name": "Copos de maiz sin azucar",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 1800 },
@@ -403,7 +405,7 @@
   {
     "id": "fibra-total",
     "name": "Fibra total",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 1800 },
@@ -413,7 +415,7 @@
   {
     "id": "naturitas-frutos-rojos",
     "name": "Naturitas de frutos rojos",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 2300 },
@@ -423,7 +425,7 @@
   {
     "id": "quinoa-pop",
     "name": "Quinoa pop",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 1900 },
@@ -433,7 +435,7 @@
   {
     "id": "tutucas-stevia",
     "name": "Tutucas con stevia",
-    "category": "Ceriales",
+    "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
       { "label": "100g", "price": 2200 },

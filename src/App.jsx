@@ -3,11 +3,18 @@ import ProductCard from "./components/ProductCard";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
 import initialProducts from "./data/products.json";
+import { normalizeProductName } from "./utils/productName";
+import {
+  VEGAN_FILTER_CATEGORY,
+  getProductCategoryOptions,
+  isVeganFilterCategory,
+  resolveProductCategoryAndVegan,
+} from "./utils/productCategories";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
-const PRODUCTS_DATA_VERSION = 2;
+const PRODUCTS_DATA_VERSION = 8;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
 const ADMIN_USER = "dieteticacanelo@gmail.com";
 const ADMIN_PASSWORD = "TagaBodoque";
@@ -17,7 +24,7 @@ const DEFAULT_CATEGORIES = [
   "Sin tacc",
   "Granolas",
   "Apto keto",
-  "Ceriales",
+  "Cereales",
   "Condimentos",
   "Congelados",
   "Aceites",
@@ -28,6 +35,10 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const normalizeCategoryName = (value) => value.trim().replace(/\s+/g, " ");
+const normalizeCategoryLabel = (value) => {
+  const normalizedValue = normalizeCategoryName(value || "");
+  return normalizedValue.toLowerCase() === "ceriales" ? "Cereales" : normalizedValue;
+};
 const normalizePriceValue = (value) => Number(String(value).replace(",", "."));
 const slugify = (value) =>
   value
@@ -58,8 +69,10 @@ const sanitizeProducts = (productList) => {
   return productList
     .map((product, index) => {
       const id = String(product?.id ?? "").trim() || `producto-${index + 1}`;
-      const name = String(product?.name ?? "").trim();
-      const category = String(product?.category ?? "").trim() || "Sin tacc";
+      const normalizedCategory =
+        normalizeCategoryLabel(String(product?.category ?? "").trim()) || "Sin tacc";
+      const { category, isVegan } = resolveProductCategoryAndVegan(product, normalizedCategory);
+      const name = normalizeProductName(String(product?.name ?? "").trim(), category);
       const image = String(product?.image ?? "").trim() || DEFAULT_PRODUCT_IMAGE;
       const presentations = sanitizePresentations(product?.presentations);
       if (!name || !presentations.length) return null;
@@ -71,6 +84,7 @@ const sanitizeProducts = (productList) => {
         category,
         image,
         presentations,
+        isVegan,
         outOfStock: Boolean(product?.outOfStock),
       };
     })
@@ -104,9 +118,11 @@ export default function App() {
   });
   const [categories, setCategories] = useState(() => {
     const storedCategories = loadStoredData(CATEGORIES_STORAGE_KEY, DEFAULT_CATEGORIES);
-    return Array.isArray(storedCategories) && storedCategories.length
-      ? storedCategories
-      : DEFAULT_CATEGORIES;
+    if (!Array.isArray(storedCategories) || !storedCategories.length) {
+      return DEFAULT_CATEGORIES;
+    }
+
+    return [...new Set(storedCategories.map((category) => normalizeCategoryLabel(category)).filter(Boolean))];
   });
   const [newCategory, setNewCategory] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
@@ -126,10 +142,22 @@ export default function App() {
   const [newProductCategory, setNewProductCategory] = useState("Sin tacc");
   const [newProductPresentation, setNewProductPresentation] = useState("1kg");
   const [newProductPrice, setNewProductPrice] = useState("");
+  const [newProductIsVegan, setNewProductIsVegan] = useState(false);
   const [newProductImage, setNewProductImage] = useState("");
   const [productAdminError, setProductAdminError] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductDraft, setEditingProductDraft] = useState(null);
+
+  useEffect(() => {
+    setProducts((currentProducts) => {
+      const sanitizedProducts = sanitizeProducts(currentProducts);
+      const hasNameChanges = sanitizedProducts.some((product) => {
+        const currentProduct = currentProducts.find((item) => item.id === product.id);
+        return currentProduct && currentProduct.name !== product.name;
+      });
+      return hasNameChanges ? sanitizedProducts : currentProducts;
+    });
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
@@ -154,6 +182,11 @@ export default function App() {
     return [...new Set([...categories, ...categoriesWithProducts])];
   }, [categories, products]);
 
+  const productCategoryOptions = useMemo(
+    () => getProductCategoryOptions(allCategories),
+    [allCategories]
+  );
+
   useEffect(() => {
     if (selectedCategory !== "Todas" && !allCategories.includes(selectedCategory)) {
       setSelectedCategory("Todas");
@@ -163,6 +196,9 @@ export default function App() {
 
   const visibleProducts = useMemo(() => {
     if (selectedCategory === "Todas") return products;
+    if (isVeganFilterCategory(selectedCategory)) {
+      return products.filter((product) => product.isVegan);
+    }
     return products.filter((product) => product.category === selectedCategory);
   }, [products, selectedCategory]);
 
@@ -200,13 +236,16 @@ export default function App() {
     return products.reduce((acc, product) => {
       const normalizedCategory = normalizeCategoryName(product.category || "Sin tacc");
       acc[normalizedCategory] = (acc[normalizedCategory] ?? 0) + 1;
+      if (product.isVegan) {
+        acc[VEGAN_FILTER_CATEGORY] = (acc[VEGAN_FILTER_CATEGORY] ?? 0) + 1;
+      }
       return acc;
     }, {});
   }, [products]);
 
   const handleAddCategory = (event) => {
     event.preventDefault();
-    const normalizedName = normalizeCategoryName(newCategory);
+    const normalizedName = normalizeCategoryLabel(newCategory);
     if (!normalizedName) return;
 
     const alreadyExists = allCategories.some(
@@ -225,7 +264,7 @@ export default function App() {
   };
 
   const handleSaveCategory = (previousCategory) => {
-    const normalizedName = normalizeCategoryName(editingCategoryValue);
+    const normalizedName = normalizeCategoryLabel(editingCategoryValue);
     if (!normalizedName) return;
 
     const alreadyExists = allCategories.some(
@@ -314,6 +353,13 @@ export default function App() {
       return;
     }
 
+    if (isVeganFilterCategory(normalizedCategory)) {
+      setProductAdminError(
+        'Elegí el tipo de producto, no "Veganos". Marcá "Producto vegano" si corresponde.'
+      );
+      return;
+    }
+
     const categoryExists = allCategories.some(
       (category) => category.toLowerCase() === normalizedCategory.toLowerCase()
     );
@@ -341,6 +387,7 @@ export default function App() {
       name: normalizedName,
       category: normalizedCategory,
       image: newProductImage.trim() || DEFAULT_PRODUCT_IMAGE,
+      isVegan: newProductIsVegan,
       outOfStock: false,
       presentations: [
         {
@@ -353,6 +400,7 @@ export default function App() {
     setProducts((currentProducts) => [...currentProducts, nextProduct]);
     setNewProductName("");
     setNewProductCategory("Sin tacc");
+    setNewProductIsVegan(false);
     setNewProductPresentation("1kg");
     setNewProductPrice("");
     setNewProductImage("");
@@ -385,6 +433,7 @@ export default function App() {
       name: product.name,
       category: product.category,
       image: product.image,
+      isVegan: Boolean(product.isVegan),
       outOfStock: Boolean(product.outOfStock),
       presentations: product.presentations.map((presentation) => ({
         label: presentation.label,
@@ -490,6 +539,13 @@ export default function App() {
       return;
     }
 
+    if (isVeganFilterCategory(normalizedCategory)) {
+      setProductAdminError(
+        'Elegí el tipo de producto, no "Veganos". Marcá "Producto vegano" si corresponde.'
+      );
+      return;
+    }
+
     const categoryExists = allCategories.some(
       (category) => category.toLowerCase() === normalizedCategory.toLowerCase()
     );
@@ -508,6 +564,7 @@ export default function App() {
       name: normalizedName,
       category: normalizedCategory,
       image: editingProductDraft.image.trim() || DEFAULT_PRODUCT_IMAGE,
+      isVegan: Boolean(editingProductDraft.isVegan),
       outOfStock: Boolean(editingProductDraft.outOfStock),
       presentations: sanitizedPresentations.map((presentation) => ({
         label: presentation.label,
@@ -560,6 +617,7 @@ export default function App() {
     setEditingProductDraft(null);
     setNewProductName("");
     setNewProductCategory("Sin tacc");
+    setNewProductIsVegan(false);
     setNewProductPresentation("1kg");
     setNewProductPrice("");
     setNewProductImage("");
@@ -596,23 +654,42 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="site-header">
-        <div>
-          <h1>Dietetica Canelo</h1>
-          <p>Elegi tus productos en presentaciones fijas y arma tu pedido.</p>
-        </div>
+        <h1 className="site-brand">
+          <picture>
+            <source srcSet="/images/logo.webp" type="image/webp" />
+            <img className="site-brand-logo" src="/images/logo.jpeg" alt="Canelo" />
+          </picture>
+        </h1>
 
         <div className="header-actions">
-          <button className="button" type="button" onClick={handleAdminAccessClick}>
-            {isAdmin ? "Panel admin" : "Ingresar admin"}
-          </button>
-          <button className="button primary cart-button" onClick={() => setCartOpen(true)}>
-            Carrito ({totals.totalItems})
+          <button
+            className="header-icon-button cart-icon-button"
+            type="button"
+            onClick={() => setCartOpen(true)}
+            aria-label={`Abrir carrito, ${totals.totalItems} productos`}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 18a2 2 0 1 0 2 2 2 2 0 0 0-2-2Zm10 0a2 2 0 1 0 2 2 2 2 0 0 0-2-2ZM6.2 6h14.8l-1.4 7.2a1 1 0 0 1-1 .8H8.4a1 1 0 0 1-1-.9L5.1 3.9A1 1 0 0 0 4.1 3H2" />
+            </svg>
+            {totals.totalItems > 0 && (
+              <span className="cart-badge" aria-hidden="true">
+                {totals.totalItems}
+              </span>
+            )}
           </button>
         </div>
       </header>
 
       <main>
         <section className="category-admin-section">
+          <button
+            type="button"
+            className="admin-access-link"
+            onClick={handleAdminAccessClick}
+          >
+            {isAdmin ? "Panel admin" : "Ingresar admin"}
+          </button>
+
           <div className="category-filter">
             <label className="field-label" htmlFor="category-filter">
               Ordenar por categoría
@@ -785,7 +862,7 @@ export default function App() {
                   value={newProductCategory}
                   onChange={(event) => setNewProductCategory(event.target.value)}
                 >
-                  {allCategories.map((category) => (
+                  {productCategoryOptions.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
@@ -812,6 +889,14 @@ export default function App() {
                   placeholder="URL de foto (opcional)"
                 />
                 <input type="file" accept="image/*" onChange={handleNewProductImageFile} />
+                <label className="stock-toggle">
+                  <input
+                    type="checkbox"
+                    checked={newProductIsVegan}
+                    onChange={(event) => setNewProductIsVegan(event.target.checked)}
+                  />
+                  Producto vegano
+                </label>
                 <button className="button primary" type="submit">
                   Agregar producto
                 </button>
@@ -841,7 +926,7 @@ export default function App() {
                               handleEditProductField("category", event.target.value)
                             }
                           >
-                            {allCategories.map((category) => (
+                            {productCategoryOptions.map((category) => (
                               <option key={category} value={category}>
                                 {category}
                               </option>
@@ -856,6 +941,17 @@ export default function App() {
                             placeholder="URL de foto"
                           />
                           <input type="file" accept="image/*" onChange={handleEditProductImageFile} />
+
+                          <label className="stock-toggle">
+                            <input
+                              type="checkbox"
+                              checked={editingProductDraft.isVegan}
+                              onChange={(event) =>
+                                handleEditProductField("isVegan", event.target.checked)
+                              }
+                            />
+                            Producto vegano
+                          </label>
 
                           <label className="stock-toggle">
                             <input
@@ -944,7 +1040,14 @@ export default function App() {
                                 .map((presentation) => `${presentation.label}: $${presentation.price}`)
                                 .join(" | ")}
                             </span>
-                            {product.outOfStock && <span className="stock-badge">Sin stock</span>}
+                            <div className="product-admin-badges">
+                              {product.isVegan && (
+                                <span className="vegan-badge" aria-label="Producto vegano">
+                                  Vegano
+                                </span>
+                              )}
+                              {product.outOfStock && <span className="stock-badge">Sin stock</span>}
+                            </div>
                           </div>
                           <div className="product-admin-actions">
                             <button
