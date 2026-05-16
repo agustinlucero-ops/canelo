@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
 
 const STORE_NAME = "Dietetica Canelo";
-const WHATSAPP_PHONE = "5491122334455";
+const WHATSAPP_PHONE =
+  import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") || "5491122334455";
 
 export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity, removeItem }) {
   const [customerName, setCustomerName] = useState("");
