@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProductCard from "./components/ProductCard";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
+import { fetchCatalogFromApi } from "./api/catalog";
 import initialProducts from "./data/products.json";
 import { normalizeProductName } from "./utils/productName";
 import {
@@ -148,6 +149,31 @@ export default function App() {
   const [productAdminError, setProductAdminError] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductDraft, setEditingProductDraft] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { categories: apiCategories, products: apiProducts } = await fetchCatalogFromApi();
+        if (cancelled || !apiProducts.length) return;
+
+        const sanitizedProducts = sanitizeProducts(apiProducts);
+        if (!sanitizedProducts.length) return;
+
+        setProducts(sanitizedProducts);
+        if (apiCategories.length) {
+          setCategories(apiCategories);
+        }
+      } catch {
+        // Mantiene catálogo de localStorage / products.json
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     setProducts((currentProducts) => {

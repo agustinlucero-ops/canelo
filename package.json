@@ -9,7 +9,11 @@
     "dev:api": "node --watch server/index.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "start:api": "node server/index.mjs"
+    "start:api": "node server/index.mjs",
+    "db:migrate": "node scripts/run-migration.mjs",
+    "db:seed": "node scripts/seed-catalog.mjs",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "catalog:parse-pdf": "node scripts/parse-catalog-pdf.mjs"
   },
   "keywords": [
     "dietetica",
