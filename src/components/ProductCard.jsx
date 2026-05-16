@@ -1,3 +1,4 @@
+import { Vegan } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
@@ -43,7 +44,7 @@ export default function ProductCard({ product, onAddToCart }) {
           <div className="product-badges">
             {product.isVegan && (
               <span className="vegan-badge" aria-label="Producto vegano">
-                Vegano
+                <Vegan aria-hidden="true" />
               </span>
             )}
             {product.outOfStock && <span className="stock-badge">Sin stock</span>}

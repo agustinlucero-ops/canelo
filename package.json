@@ -4,9 +4,12 @@
   "private": true,
   "description": "Tienda dietetica con carrito y pedido por WhatsApp",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k \"vite\" \"node --watch server/index.mjs\"",
+    "dev:client": "vite",
+    "dev:api": "node --watch server/index.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start:api": "node server/index.mjs"
   },
   "keywords": [
     "dietetica",
@@ -17,11 +20,17 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
     "vite": "^8.0.10"
   }
 }

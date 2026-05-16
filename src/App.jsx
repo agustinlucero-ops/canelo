@@ -1,3 +1,4 @@
+import { ShoppingCart, Vegan } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "./components/ProductCard";
 import CartDrawer from "./components/CartDrawer";
@@ -668,9 +669,7 @@ export default function App() {
             onClick={() => setCartOpen(true)}
             aria-label={`Abrir carrito, ${totals.totalItems} productos`}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M7 18a2 2 0 1 0 2 2 2 2 0 0 0-2-2Zm10 0a2 2 0 1 0 2 2 2 2 0 0 0-2-2ZM6.2 6h14.8l-1.4 7.2a1 1 0 0 1-1 .8H8.4a1 1 0 0 1-1-.9L5.1 3.9A1 1 0 0 0 4.1 3H2" />
-            </svg>
+            <ShoppingCart aria-hidden="true" />
             {totals.totalItems > 0 && (
               <span className="cart-badge" aria-hidden="true">
                 {totals.totalItems}
@@ -1043,7 +1042,7 @@ export default function App() {
                             <div className="product-admin-badges">
                               {product.isVegan && (
                                 <span className="vegan-badge" aria-label="Producto vegano">
-                                  Vegano
+                                  <Vegan aria-hidden="true" />
                                 </span>
                               )}
                               {product.outOfStock && <span className="stock-badge">Sin stock</span>}
