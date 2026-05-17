@@ -1,8 +1,10 @@
-import { ShoppingCart, Vegan } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+﻿import { ShoppingCart } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
+import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import { fetchCatalogFromApi } from "./api/catalog";
 import initialProducts from "./data/products.json";
 import { normalizeProductName } from "./utils/productName";
@@ -138,8 +140,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(() =>
     loadStoredData(ADMIN_SESSION_STORAGE_KEY, false)
   );
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [activeView, setActiveView] = useState("catalogo");
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [expandedAdminCategories, setExpandedAdminCategories] = useState(() => new Set());
+  const [isCategoryToolsOpen, setIsCategoryToolsOpen] = useState(false);
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [newProductName, setNewProductName] = useState("");
   const [newProductCategory, setNewProductCategory] = useState("Sin tacc");
   const [newProductPresentation, setNewProductPresentation] = useState("1kg");
@@ -149,6 +154,9 @@ export default function App() {
   const [productAdminError, setProductAdminError] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductDraft, setEditingProductDraft] = useState(null);
+
+  const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
+  useBodyScrollLock(isCartOpen || isAdminModalOpen || isProductEditModalOpen);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,6 +237,21 @@ export default function App() {
     return products.filter((product) => product.category === selectedCategory);
   }, [products, selectedCategory]);
 
+  const sortCategoryEntries = useCallback(
+    (entries) =>
+      [...entries].sort(([categoryA], [categoryB]) => {
+        const indexA = allCategories.indexOf(categoryA);
+        const indexB = allCategories.indexOf(categoryB);
+
+        if (indexA === -1 || indexB === -1) {
+          return categoryA.localeCompare(categoryB, "es");
+        }
+
+        return indexA - indexB;
+      }),
+    [allCategories]
+  );
+
   const groupedProducts = useMemo(() => {
     const grouped = visibleProducts.reduce((acc, product) => {
       if (!acc[product.category]) {
@@ -238,17 +261,45 @@ export default function App() {
       return acc;
     }, {});
 
-    return Object.entries(grouped).sort(([categoryA], [categoryB]) => {
-      const indexA = allCategories.indexOf(categoryA);
-      const indexB = allCategories.indexOf(categoryB);
+    return sortCategoryEntries(Object.entries(grouped));
+  }, [sortCategoryEntries, visibleProducts]);
 
-      if (indexA === -1 || indexB === -1) {
-        return categoryA.localeCompare(categoryB, "es");
+  const adminGroupedProducts = useMemo(() => {
+    const grouped = products.reduce((acc, product) => {
+      if (!acc[product.category]) {
+        acc[product.category] = [];
       }
+      acc[product.category].push(product);
+      return acc;
+    }, {});
 
-      return indexA - indexB;
+    return sortCategoryEntries(Object.entries(grouped));
+  }, [products, sortCategoryEntries]);
+
+  const expandAdminCategory = useCallback((category) => {
+    if (!category) return;
+    setExpandedAdminCategories((current) => new Set([...current, category]));
+  }, []);
+
+  const toggleAdminCategory = useCallback((category) => {
+    setExpandedAdminCategories((current) => {
+      const next = new Set(current);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
     });
-  }, [allCategories, visibleProducts]);
+  }, []);
+
+  const expandAllAdminCategories = useCallback(() => {
+    setExpandedAdminCategories(new Set(adminGroupedProducts.map(([category]) => category)));
+  }, [adminGroupedProducts]);
+
+  const collapseAllAdminCategories = useCallback(() => {
+    setExpandedAdminCategories(new Set());
+  }, []);
 
   const filteredCategorySuggestions = useMemo(() => {
     const normalizedSearch = categorySearch.trim().toLowerCase();
@@ -425,6 +476,7 @@ export default function App() {
     };
 
     setProducts((currentProducts) => [...currentProducts, nextProduct]);
+    expandAdminCategory(normalizedCategory);
     setNewProductName("");
     setNewProductCategory("Sin tacc");
     setNewProductIsVegan(false);
@@ -454,6 +506,7 @@ export default function App() {
   };
 
   const handleStartEditProduct = (product) => {
+    expandAdminCategory(product.category);
     setEditingProductId(product.id);
     setEditingProductDraft({
       id: product.id,
@@ -602,6 +655,7 @@ export default function App() {
     setProducts((currentProducts) =>
       currentProducts.map((product) => (product.id === productId ? updatedProduct : product))
     );
+    expandAdminCategory(normalizedCategory);
     setEditingProductId(null);
     setEditingProductDraft(null);
     setProductAdminError("");
@@ -619,7 +673,10 @@ export default function App() {
 
     if (normalizedUser === ADMIN_USER && adminPasswordInput === ADMIN_PASSWORD) {
       setIsAdmin(true);
-      setIsAdminPanelOpen(true);
+      setActiveView("gestion");
+      setExpandedAdminCategories(new Set());
+      setIsCategoryToolsOpen(false);
+      setIsAddProductOpen(false);
       setIsAdminModalOpen(false);
       setAdminUserInput("");
       setAdminPasswordInput("");
@@ -632,7 +689,10 @@ export default function App() {
 
   const handleAdminLogout = () => {
     setIsAdmin(false);
-    setIsAdminPanelOpen(false);
+    setActiveView("catalogo");
+    setExpandedAdminCategories(new Set());
+    setIsCategoryToolsOpen(false);
+    setIsAddProductOpen(false);
     setIsAdminModalOpen(false);
     setAdminUserInput("");
     setAdminPasswordInput("");
@@ -653,12 +713,17 @@ export default function App() {
 
   const handleAdminAccessClick = () => {
     if (isAdmin) {
-      setIsAdminPanelOpen((currentValue) => !currentValue);
+      setActiveView("gestion");
       return;
     }
 
     setAdminError("");
     setIsAdminModalOpen(true);
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
+    setEditingCategoryValue("");
   };
 
   const handleCategorySelect = (category) => {
@@ -688,6 +753,29 @@ export default function App() {
           </picture>
         </h1>
 
+        {isAdmin && (
+          <nav className="header-tabs" role="tablist" aria-label="Vistas de la tienda">
+            <button
+              type="button"
+              role="tab"
+              className={`header-tab ${activeView === "catalogo" ? "active" : ""}`}
+              aria-selected={activeView === "catalogo"}
+              onClick={() => setActiveView("catalogo")}
+            >
+              Catálogo
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className={`header-tab ${activeView === "gestion" ? "active" : ""}`}
+              aria-selected={activeView === "gestion"}
+              onClick={() => setActiveView("gestion")}
+            >
+              Gestión
+            </button>
+          </nav>
+        )}
+
         <div className="header-actions">
           <button
             className="header-icon-button cart-icon-button"
@@ -706,15 +794,21 @@ export default function App() {
       </header>
 
       <main>
-        <section className="category-admin-section">
-          <button
-            type="button"
-            className="admin-access-link"
-            onClick={handleAdminAccessClick}
-          >
-            {isAdmin ? "Panel admin" : "Ingresar admin"}
-          </button>
+        {activeView === "catalogo" && (
+          <>
+            {!isAdmin && (
+              <section className="category-admin-section">
+                <button
+                  type="button"
+                  className="admin-access-link"
+                  onClick={handleAdminAccessClick}
+                >
+                  Ingresar admin
+                </button>
+              </section>
+            )}
 
+            <section className="category-admin-section">
           <div className="category-filter">
             <label className="field-label" htmlFor="category-filter">
               Ordenar por categoría
@@ -781,324 +875,6 @@ export default function App() {
           </div>
         </section>
 
-        {isAdmin && isAdminPanelOpen && (
-          <section className="admin-section">
-            <div className="admin-header">
-              <h2>Administrador</h2>
-              <button className="button" type="button" onClick={handleAdminLogout}>
-                Cerrar sesión
-              </button>
-            </div>
-
-            <div className="category-admin-card">
-              <h3>Categorías</h3>
-              <form className="category-form" onSubmit={handleAddCategory}>
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(event) => setNewCategory(event.target.value)}
-                  placeholder="Nueva categoría"
-                />
-                <button className="button primary" type="submit">
-                  Agregar
-                </button>
-              </form>
-
-              <ul className="category-list">
-                {allCategories.map((category) => (
-                  <li key={category} className="category-list-item">
-                    {editingCategory === category ? (
-                      <div className="category-edit-grid">
-                        <input
-                          type="text"
-                          value={editingCategoryValue}
-                          onChange={(event) => setEditingCategoryValue(event.target.value)}
-                        />
-                        <div className="category-item-actions">
-                          <button
-                            className="button primary button-sm"
-                            type="button"
-                            onClick={() => handleSaveCategory(category)}
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            className="button button-sm"
-                            type="button"
-                            onClick={() => {
-                              setEditingCategory(null);
-                              setEditingCategoryValue("");
-                            }}
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="category-item-content">
-                        <div className="category-item-main">
-                          <span>{category}</span>
-                          <small>
-                            {categoryProductCount[normalizeCategoryName(category)] ?? 0} productos
-                          </small>
-                        </div>
-                        <div className="category-item-actions">
-                          <button
-                            className="button button-sm"
-                            type="button"
-                            onClick={() => handleStartEditCategory(category)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="button button-sm button-danger"
-                            type="button"
-                            onClick={() => handleDeleteCategory(category)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="product-admin-card">
-              <h3>Productos</h3>
-
-              <form
-                className="product-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleAddProduct();
-                }}
-              >
-                <input
-                  type="text"
-                  value={newProductName}
-                  onChange={(event) => setNewProductName(event.target.value)}
-                  placeholder="Nombre del producto"
-                />
-                <select
-                  className="select-field"
-                  value={newProductCategory}
-                  onChange={(event) => setNewProductCategory(event.target.value)}
-                >
-                  {productCategoryOptions.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={newProductPresentation}
-                  onChange={(event) => setNewProductPresentation(event.target.value)}
-                  placeholder="Presentación (ej. 500g)"
-                />
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={newProductPrice}
-                  onChange={(event) => setNewProductPrice(event.target.value)}
-                  placeholder="Precio"
-                />
-                <input
-                  type="url"
-                  value={newProductImage}
-                  onChange={(event) => setNewProductImage(event.target.value)}
-                  placeholder="URL de foto (opcional)"
-                />
-                <input type="file" accept="image/*" onChange={handleNewProductImageFile} />
-                <label className="stock-toggle">
-                  <input
-                    type="checkbox"
-                    checked={newProductIsVegan}
-                    onChange={(event) => setNewProductIsVegan(event.target.checked)}
-                  />
-                  Producto vegano
-                </label>
-                <button className="button primary" type="submit">
-                  Agregar producto
-                </button>
-              </form>
-
-              {productAdminError && <p className="admin-error">{productAdminError}</p>}
-
-              <ul className="product-list">
-                {products.map((product) => {
-                  const isEditing = editingProductId === product.id && editingProductDraft;
-                  return (
-                    <li key={product.id} className="product-list-item">
-                      {isEditing ? (
-                        <div className="product-editor">
-                          <input
-                            type="text"
-                            value={editingProductDraft.name}
-                            onChange={(event) =>
-                              handleEditProductField("name", event.target.value)
-                            }
-                            placeholder="Nombre"
-                          />
-                          <select
-                            className="select-field"
-                            value={editingProductDraft.category}
-                            onChange={(event) =>
-                              handleEditProductField("category", event.target.value)
-                            }
-                          >
-                            {productCategoryOptions.map((category) => (
-                              <option key={category} value={category}>
-                                {category}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="url"
-                            value={editingProductDraft.image}
-                            onChange={(event) =>
-                              handleEditProductField("image", event.target.value)
-                            }
-                            placeholder="URL de foto"
-                          />
-                          <input type="file" accept="image/*" onChange={handleEditProductImageFile} />
-
-                          <label className="stock-toggle">
-                            <input
-                              type="checkbox"
-                              checked={editingProductDraft.isVegan}
-                              onChange={(event) =>
-                                handleEditProductField("isVegan", event.target.checked)
-                              }
-                            />
-                            Producto vegano
-                          </label>
-
-                          <label className="stock-toggle">
-                            <input
-                              type="checkbox"
-                              checked={editingProductDraft.outOfStock}
-                              onChange={(event) =>
-                                handleEditProductField("outOfStock", event.target.checked)
-                              }
-                            />
-                            Sin stock
-                          </label>
-
-                          <div className="presentation-admin-list">
-                            {editingProductDraft.presentations.map((presentation, index) => (
-                              <div key={`${product.id}-${index}`} className="presentation-admin-row">
-                                <input
-                                  type="text"
-                                  value={presentation.label}
-                                  onChange={(event) =>
-                                    handleEditProductPresentationField(
-                                      index,
-                                      "label",
-                                      event.target.value
-                                    )
-                                  }
-                                  placeholder="Presentación"
-                                />
-                                <input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  value={presentation.price}
-                                  onChange={(event) =>
-                                    handleEditProductPresentationField(
-                                      index,
-                                      "price",
-                                      event.target.value
-                                    )
-                                  }
-                                  placeholder="Precio"
-                                />
-                                <button
-                                  className="button"
-                                  type="button"
-                                  onClick={() => handleRemovePresentationFromDraft(index)}
-                                >
-                                  Quitar
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="product-editor-actions">
-                            <button
-                              className="button"
-                              type="button"
-                              onClick={handleAddPresentationToDraft}
-                            >
-                              + Presentación
-                            </button>
-                            <button
-                              className="button primary"
-                              type="button"
-                              onClick={() => handleSaveEditedProduct(product.id)}
-                            >
-                              Guardar cambios
-                            </button>
-                            <button className="button" type="button" onClick={handleCancelEditProduct}>
-                              Cancelar
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="product-admin-row">
-                          <img
-                            className="product-admin-image"
-                            src={product.image}
-                            alt={product.name}
-                            loading="lazy"
-                          />
-                          <div className="product-admin-info">
-                            <strong>{product.name}</strong>
-                            <span>{product.category}</span>
-                            <span>
-                              {product.presentations
-                                .map((presentation) => `${presentation.label}: $${presentation.price}`)
-                                .join(" | ")}
-                            </span>
-                            <div className="product-admin-badges">
-                              {product.isVegan && (
-                                <span className="vegan-badge" aria-label="Producto vegano">
-                                  <Vegan aria-hidden="true" />
-                                </span>
-                              )}
-                              {product.outOfStock && <span className="stock-badge">Sin stock</span>}
-                            </div>
-                          </div>
-                          <div className="product-admin-actions">
-                            <button
-                              className="button"
-                              type="button"
-                              onClick={() => handleStartEditProduct(product)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              className="button"
-                              type="button"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </section>
-        )}
 
         {groupedProducts.map(([category, categoryProducts]) => (
           <section key={category} className="category-section">
@@ -1110,6 +886,63 @@ export default function App() {
             </div>
           </section>
         ))}
+          </>
+        )}
+
+        {isAdmin && activeView === "gestion" && (
+          <AdminPanel
+            allCategories={allCategories}
+            productCategoryOptions={productCategoryOptions}
+            categoryProductCount={categoryProductCount}
+            adminGroupedProducts={adminGroupedProducts}
+            expandedAdminCategories={expandedAdminCategories}
+            onToggleAdminCategory={toggleAdminCategory}
+            onExpandAllCategories={expandAllAdminCategories}
+            onCollapseAllCategories={collapseAllAdminCategories}
+            isCategoryToolsOpen={isCategoryToolsOpen}
+            onToggleCategoryTools={() => setIsCategoryToolsOpen((value) => !value)}
+            isAddProductOpen={isAddProductOpen}
+            onToggleAddProduct={() => setIsAddProductOpen((value) => !value)}
+            newCategory={newCategory}
+            onNewCategoryChange={setNewCategory}
+            editingCategory={editingCategory}
+            editingCategoryValue={editingCategoryValue}
+            onEditingCategoryValueChange={setEditingCategoryValue}
+            onAddCategory={handleAddCategory}
+            onStartEditCategory={handleStartEditCategory}
+            onSaveCategory={handleSaveCategory}
+            onCancelEditCategory={handleCancelEditCategory}
+            onDeleteCategory={handleDeleteCategory}
+            newProductName={newProductName}
+            onNewProductNameChange={setNewProductName}
+            newProductCategory={newProductCategory}
+            onNewProductCategoryChange={setNewProductCategory}
+            newProductPresentation={newProductPresentation}
+            onNewProductPresentationChange={setNewProductPresentation}
+            newProductPrice={newProductPrice}
+            onNewProductPriceChange={setNewProductPrice}
+            newProductImage={newProductImage}
+            onNewProductImageChange={setNewProductImage}
+            newProductIsVegan={newProductIsVegan}
+            onNewProductIsVeganChange={setNewProductIsVegan}
+            onNewProductImageFile={handleNewProductImageFile}
+            onAddProduct={handleAddProduct}
+            productAdminError={productAdminError}
+            editingProductId={editingProductId}
+            editingProductDraft={editingProductDraft}
+            onStartEditProduct={handleStartEditProduct}
+            onEditProductField={handleEditProductField}
+            onEditProductPresentationField={handleEditProductPresentationField}
+            onAddPresentationToDraft={handleAddPresentationToDraft}
+            onRemovePresentationFromDraft={handleRemovePresentationFromDraft}
+            onEditProductImageFile={handleEditProductImageFile}
+            onSaveEditedProduct={handleSaveEditedProduct}
+            onCancelEditProduct={handleCancelEditProduct}
+            onDeleteProduct={handleDeleteProduct}
+            onLogout={handleAdminLogout}
+            normalizeCategoryName={normalizeCategoryName}
+          />
+        )}
       </main>
 
       <CartDrawer

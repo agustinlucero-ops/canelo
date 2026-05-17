@@ -4,7 +4,7 @@ import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
 import { normalizeProductName } from "../utils/productName";
 
-export default function ProductCard({ product, onAddToCart }) {
+export default function ProductCard({ product, onAddToCart, preview = false }) {
   const [selectedPresentation, setSelectedPresentation] = useState(
     product.presentations[0].label
   );
@@ -40,16 +40,14 @@ export default function ProductCard({ product, onAddToCart }) {
         loading="lazy"
       />
       <div className="product-content">
-        {(product.isVegan || product.outOfStock) && (
-          <div className="product-badges">
-            {product.isVegan && (
-              <span className="vegan-badge" aria-label="Producto vegano">
-                <Vegan aria-hidden="true" />
-              </span>
-            )}
-            {product.outOfStock && <span className="stock-badge">Sin stock</span>}
-          </div>
-        )}
+        <div className="product-badges">
+          {product.isVegan && (
+            <span className="vegan-badge" aria-label="Producto vegano">
+              <Vegan aria-hidden="true" />
+            </span>
+          )}
+          {product.outOfStock && <span className="stock-badge">Sin stock</span>}
+        </div>
         <h3>{displayName}</h3>
         <p className="product-price">{formatPrice(currentPresentation.price)}</p>
 
@@ -60,13 +58,17 @@ export default function ProductCard({ product, onAddToCart }) {
           onChange={setSelectedPresentation}
         />
 
-        <button
-          className={`button primary ${product.outOfStock ? "disabled" : ""}`.trim()}
-          onClick={handleAdd}
-          disabled={product.outOfStock}
-        >
-          {product.outOfStock ? "No disponible" : "Agregar al carrito"}
-        </button>
+        {preview ? (
+          <p className="product-preview-note">Vista previa del catálogo</p>
+        ) : (
+          <button
+            className={`button primary ${product.outOfStock ? "disabled" : ""}`.trim()}
+            onClick={handleAdd}
+            disabled={product.outOfStock}
+          >
+            {product.outOfStock ? "No disponible" : "Agregar al carrito"}
+          </button>
+        )}
       </div>
     </article>
   );
