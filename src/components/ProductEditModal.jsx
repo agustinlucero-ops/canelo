@@ -35,12 +35,20 @@ export default function ProductEditModal({
   onAddPresentationToDraft,
   onRemovePresentationFromDraft,
   onEditProductImageFile,
+  isActionDisabled = false,
+  isSaving = false,
 }) {
   const previewProduct = draftToPreviewProduct(draft);
 
   return (
     <>
-      <button type="button" className="overlay" onClick={onClose} aria-label="Cerrar editor" />
+      <button
+        type="button"
+        className="overlay"
+        onClick={onClose}
+        aria-label="Cerrar editor"
+        disabled={isSaving}
+      />
       <div
         className="modal-card product-edit-modal"
         role="dialog"
@@ -49,7 +57,13 @@ export default function ProductEditModal({
       >
         <div className="product-edit-modal-header">
           <h2 id="product-edit-title">Editar producto</h2>
-          <button type="button" className="admin-icon-button" onClick={onClose} aria-label="Cerrar">
+          <button
+            type="button"
+            className="admin-icon-button"
+            onClick={onClose}
+            aria-label="Cerrar"
+            disabled={isSaving}
+          >
             <X aria-hidden="true" />
           </button>
         </div>
@@ -71,11 +85,13 @@ export default function ProductEditModal({
             value={draft.name}
             onChange={(event) => onEditProductField("name", event.target.value)}
             placeholder="Nombre"
+            disabled={isActionDisabled}
           />
           <select
             className="select-field"
             value={draft.category}
             onChange={(event) => onEditProductField("category", event.target.value)}
+            disabled={isActionDisabled}
           >
             {productCategoryOptions.map((category) => (
               <option key={category} value={category}>
@@ -93,14 +109,21 @@ export default function ProductEditModal({
             value={draft.image}
             onChange={(event) => onEditProductField("image", event.target.value)}
             placeholder="URL de foto"
+            disabled={isActionDisabled}
           />
-          <input type="file" accept="image/*" onChange={onEditProductImageFile} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onEditProductImageFile}
+            disabled={isActionDisabled}
+          />
 
           <label className="stock-toggle">
             <input
               type="checkbox"
               checked={draft.isVegan}
               onChange={(event) => onEditProductField("isVegan", event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto vegano
           </label>
@@ -109,6 +132,7 @@ export default function ProductEditModal({
               type="checkbox"
               checked={draft.isKeto}
               onChange={(event) => onEditProductField("isKeto", event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto apto keto
           </label>
@@ -117,6 +141,7 @@ export default function ProductEditModal({
               type="checkbox"
               checked={draft.isGlutenFree}
               onChange={(event) => onEditProductField("isGlutenFree", event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto sin TACC
           </label>
@@ -126,6 +151,7 @@ export default function ProductEditModal({
               type="checkbox"
               checked={draft.outOfStock}
               onChange={(event) => onEditProductField("outOfStock", event.target.checked)}
+              disabled={isActionDisabled}
             />
             Sin stock
           </label>
@@ -141,6 +167,7 @@ export default function ProductEditModal({
                     onEditProductPresentationField(index, "label", event.target.value)
                   }
                   placeholder="Presentación"
+                  disabled={isActionDisabled}
                 />
                 <input
                   type="number"
@@ -151,13 +178,14 @@ export default function ProductEditModal({
                     onEditProductPresentationField(index, "price", event.target.value)
                   }
                   placeholder="Precio"
+                  disabled={isActionDisabled}
                 />
                 <button
                   className="admin-icon-button"
                   type="button"
                   onClick={() => onRemovePresentationFromDraft(index)}
                   aria-label="Quitar presentación"
-                  disabled={draft.presentations.length === 1}
+                  disabled={isActionDisabled || draft.presentations.length === 1}
                 >
                   <X aria-hidden="true" />
                 </button>
@@ -165,18 +193,23 @@ export default function ProductEditModal({
             ))}
           </div>
 
-          <button className="button" type="button" onClick={onAddPresentationToDraft}>
+          <button
+            className="button"
+            type="button"
+            onClick={onAddPresentationToDraft}
+            disabled={isActionDisabled}
+          >
             + Presentación
           </button>
 
           {productAdminError && <p className="admin-error">{productAdminError}</p>}
 
           <div className="modal-actions">
-            <button className="button" type="button" onClick={onClose}>
+            <button className="button" type="button" onClick={onClose} disabled={isSaving}>
               Cancelar
             </button>
-            <button className="button primary" type="submit">
-              Guardar cambios
+            <button className="button primary" type="submit" disabled={isActionDisabled}>
+              {isSaving ? "Guardando..." : "Guardar cambios"}
             </button>
           </div>
         </form>

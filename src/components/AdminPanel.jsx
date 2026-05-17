@@ -6,7 +6,7 @@ function formatPresentationsSummary(presentations) {
   return presentations.map((p) => `${p.label}: $${p.price}`).join(" · ");
 }
 
-function ProductListItem({ product, onStartEditProduct, onDeleteProduct }) {
+function ProductListItem({ product, onStartEditProduct, onDeleteProduct, isActionDisabled }) {
   return (
     <li className="admin-product-list-item">
       <div className="admin-product-list-row">
@@ -47,6 +47,7 @@ function ProductListItem({ product, onStartEditProduct, onDeleteProduct }) {
             type="button"
             onClick={() => onStartEditProduct(product)}
             aria-label={`Editar ${product.name}`}
+            disabled={isActionDisabled}
           >
             <Pencil aria-hidden="true" />
           </button>
@@ -55,6 +56,7 @@ function ProductListItem({ product, onStartEditProduct, onDeleteProduct }) {
             type="button"
             onClick={() => onDeleteProduct(product.id)}
             aria-label={`Eliminar ${product.name}`}
+            disabled={isActionDisabled}
           >
             <Trash2 aria-hidden="true" />
           </button>
@@ -83,6 +85,7 @@ export default function AdminPanel({
   editingCategoryValue,
   onEditingCategoryValueChange,
   onAddCategory,
+  categoryAdminError,
   onStartEditCategory,
   onSaveCategory,
   onCancelEditCategory,
@@ -106,6 +109,8 @@ export default function AdminPanel({
   onNewProductImageFile,
   onAddProduct,
   productAdminError,
+  adminPendingAction,
+  isCatalogApiAvailable,
   editingProductId,
   editingProductDraft,
   onStartEditProduct,
@@ -120,6 +125,10 @@ export default function AdminPanel({
   onLogout,
   normalizeCategoryName,
 }) {
+  const isMutating = Boolean(adminPendingAction);
+  const isReadOnly = !isCatalogApiAvailable;
+  const isActionDisabled = isMutating || isReadOnly;
+
   return (
     <section className="admin-section">
       <div className="admin-header">
@@ -128,6 +137,12 @@ export default function AdminPanel({
           Cerrar sesión
         </button>
       </div>
+      {isReadOnly && (
+        <p className="admin-error">
+          La API de catálogo no está disponible. La gestión está en modo solo lectura.
+        </p>
+      )}
+      {isMutating && <p className="field-label">Guardando cambios...</p>}
 
       <CollapsibleSection
         title="Categorías"
@@ -141,11 +156,13 @@ export default function AdminPanel({
               value={newCategory}
               onChange={(event) => onNewCategoryChange(event.target.value)}
               placeholder="Nueva categoría"
+              disabled={isActionDisabled}
             />
-            <button className="button primary" type="submit">
+            <button className="button primary" type="submit" disabled={isActionDisabled}>
               Agregar
             </button>
           </form>
+          {categoryAdminError && <p className="admin-error">{categoryAdminError}</p>}
 
           <ul className="category-list">
             {allCategories.map((category) => (
@@ -156,6 +173,7 @@ export default function AdminPanel({
                       type="text"
                       value={editingCategoryValue}
                       onChange={(event) => onEditingCategoryValueChange(event.target.value)}
+                      disabled={isActionDisabled}
                     />
                     <div className="category-item-actions">
                       <button
@@ -163,6 +181,7 @@ export default function AdminPanel({
                         type="button"
                         onClick={() => onSaveCategory(category)}
                         aria-label={`Guardar categoría ${category}`}
+                        disabled={isActionDisabled}
                       >
                         <Check aria-hidden="true" />
                       </button>
@@ -171,6 +190,7 @@ export default function AdminPanel({
                         type="button"
                         onClick={onCancelEditCategory}
                         aria-label="Cancelar edición"
+                        disabled={isMutating}
                       >
                         <X aria-hidden="true" />
                       </button>
@@ -190,6 +210,7 @@ export default function AdminPanel({
                         type="button"
                         onClick={() => onStartEditCategory(category)}
                         aria-label={`Editar categoría ${category}`}
+                        disabled={isActionDisabled}
                       >
                         <Pencil aria-hidden="true" />
                       </button>
@@ -198,6 +219,7 @@ export default function AdminPanel({
                         type="button"
                         onClick={() => onDeleteCategory(category)}
                         aria-label={`Eliminar categoría ${category}`}
+                        disabled={isActionDisabled}
                       >
                         <Trash2 aria-hidden="true" />
                       </button>
@@ -228,11 +250,13 @@ export default function AdminPanel({
             value={newProductName}
             onChange={(event) => onNewProductNameChange(event.target.value)}
             placeholder="Nombre del producto"
+            disabled={isActionDisabled}
           />
           <select
             className="select-field"
             value={newProductCategory}
             onChange={(event) => onNewProductCategoryChange(event.target.value)}
+            disabled={isActionDisabled}
           >
             {productCategoryOptions.map((category) => (
               <option key={category} value={category}>
@@ -245,6 +269,7 @@ export default function AdminPanel({
             value={newProductPresentation}
             onChange={(event) => onNewProductPresentationChange(event.target.value)}
             placeholder="Presentación (ej. 500g)"
+            disabled={isActionDisabled}
           />
           <input
             type="number"
@@ -253,19 +278,27 @@ export default function AdminPanel({
             value={newProductPrice}
             onChange={(event) => onNewProductPriceChange(event.target.value)}
             placeholder="Precio"
+            disabled={isActionDisabled}
           />
           <input
             type="url"
             value={newProductImage}
             onChange={(event) => onNewProductImageChange(event.target.value)}
             placeholder="URL de foto (opcional)"
+            disabled={isActionDisabled}
           />
-          <input type="file" accept="image/*" onChange={onNewProductImageFile} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onNewProductImageFile}
+            disabled={isActionDisabled}
+          />
           <label className="stock-toggle">
             <input
               type="checkbox"
               checked={newProductIsVegan}
               onChange={(event) => onNewProductIsVeganChange(event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto vegano
           </label>
@@ -274,6 +307,7 @@ export default function AdminPanel({
               type="checkbox"
               checked={newProductIsKeto}
               onChange={(event) => onNewProductIsKetoChange(event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto apto keto
           </label>
@@ -282,10 +316,11 @@ export default function AdminPanel({
               type="checkbox"
               checked={newProductIsGlutenFree}
               onChange={(event) => onNewProductIsGlutenFreeChange(event.target.checked)}
+              disabled={isActionDisabled}
             />
             Producto sin TACC
           </label>
-          <button className="button primary" type="submit">
+          <button className="button primary" type="submit" disabled={isActionDisabled}>
             Agregar producto
           </button>
         </form>
@@ -298,10 +333,20 @@ export default function AdminPanel({
         <div className="admin-products-header">
           <h3>Productos por categoría</h3>
           <div className="admin-products-header-actions">
-            <button className="button button-sm" type="button" onClick={onExpandAllCategories}>
+            <button
+              className="button button-sm"
+              type="button"
+              onClick={onExpandAllCategories}
+              disabled={isMutating}
+            >
               Expandir todo
             </button>
-            <button className="button button-sm" type="button" onClick={onCollapseAllCategories}>
+            <button
+              className="button button-sm"
+              type="button"
+              onClick={onCollapseAllCategories}
+              disabled={isMutating}
+            >
               Colapsar todo
             </button>
           </div>
@@ -345,6 +390,7 @@ export default function AdminPanel({
                         product={product}
                         onStartEditProduct={onStartEditProduct}
                         onDeleteProduct={onDeleteProduct}
+                        isActionDisabled={isActionDisabled}
                       />
                     ))}
                   </ul>
@@ -367,6 +413,8 @@ export default function AdminPanel({
           onAddPresentationToDraft={onAddPresentationToDraft}
           onRemovePresentationFromDraft={onRemovePresentationFromDraft}
           onEditProductImageFile={onEditProductImageFile}
+          isActionDisabled={isActionDisabled}
+          isSaving={isMutating}
         />
       )}
     </section>

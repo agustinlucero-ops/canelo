@@ -1,13 +1,66 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import { getProductById, listCategories, listProducts } from "./catalog.mjs";
+import {
+  CatalogError,
+  createCategory,
+  createProduct,
+  deleteCategory,
+  deleteProduct,
+  getProductById,
+  listCategories,
+  listProducts,
+  renameCategory,
+  updateProduct,
+} from "./catalog.mjs";
 import { getSql } from "./db.mjs";
 
 const app = express();
 
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+function sendApiError(res, err, defaultCode = "internal_error", defaultMessage = "Error interno") {
+  if (err instanceof CatalogError) {
+    const statusByCode = {
+      invalid_category_name: 400,
+      invalid_product_name: 400,
+      invalid_product_category: 400,
+      invalid_presentations: 400,
+      reserved_category: 400,
+      default_category_protected: 400,
+      category_not_found: 404,
+      product_not_found: 404,
+      category_conflict: 409,
+      product_conflict: 409,
+    };
+    const statusCode = statusByCode[err.code] ?? 400;
+    res.status(statusCode).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details,
+      },
+    });
+    return;
+  }
+
+  res.status(500).json({
+    error: {
+      code: defaultCode,
+      message: defaultMessage,
+    },
+  });
+}
+
+function buildAuditMeta(req, extra = {}) {
+  return {
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+    ...extra,
+  };
+}
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -52,6 +105,81 @@ app.get("/api/products/:id", async (req, res) => {
   } catch (err) {
     console.error("[api/products/:id]", err);
     res.status(500).json({ error: "db_error" });
+  }
+});
+
+app.post("/api/categories", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "create_category" });
+  try {
+    const category = await createCategory({ name: req.body?.name });
+    console.info("[audit]", { ...actionMeta, result: "ok", category: category.name });
+    res.status(201).json({ category });
+  } catch (err) {
+    console.error("[api/categories#create]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo crear la categoría.");
+  }
+});
+
+app.put("/api/categories/:name", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "rename_category", currentName: req.params.name });
+  try {
+    const category = await renameCategory({
+      currentName: decodeURIComponent(req.params.name),
+      nextName: req.body?.nextName,
+    });
+    console.info("[audit]", { ...actionMeta, result: "ok", nextName: category.name });
+    res.json({ category });
+  } catch (err) {
+    console.error("[api/categories#update]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo renombrar la categoría.");
+  }
+});
+
+app.delete("/api/categories/:name", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "delete_category", categoryName: req.params.name });
+  try {
+    const result = await deleteCategory({ name: decodeURIComponent(req.params.name) });
+    console.info("[audit]", { ...actionMeta, result: "ok", ...result });
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error("[api/categories#delete]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo eliminar la categoría.");
+  }
+});
+
+app.post("/api/products", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "create_product", productId: req.body?.id });
+  try {
+    const product = await createProduct(req.body ?? {});
+    console.info("[audit]", { ...actionMeta, result: "ok", productId: product.id });
+    res.status(201).json({ product });
+  } catch (err) {
+    console.error("[api/products#create]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo crear el producto.");
+  }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "update_product", productId: req.params.id });
+  try {
+    const product = await updateProduct(req.params.id, req.body ?? {});
+    console.info("[audit]", { ...actionMeta, result: "ok", productId: product.id });
+    res.json({ product });
+  } catch (err) {
+    console.error("[api/products#update]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo actualizar el producto.");
+  }
+});
+
+app.delete("/api/products/:id", async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "delete_product", productId: req.params.id });
+  try {
+    const result = await deleteProduct(req.params.id);
+    console.info("[audit]", { ...actionMeta, result: "ok", productId: result.id });
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error("[api/products#delete]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo eliminar el producto.");
   }
 });
 

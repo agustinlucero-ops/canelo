@@ -6,6 +6,14 @@ import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import { fetchCatalogFromApi } from "./api/catalog";
+import {
+  createCategory as createCategoryApi,
+  createProduct as createProductApi,
+  deleteCategory as deleteCategoryApi,
+  deleteProduct as deleteProductApi,
+  renameCategory as renameCategoryApi,
+  updateProduct as updateProductApi,
+} from "./api/adminCatalog";
 import initialProducts from "./data/products.json";
 import { normalizeProductName } from "./utils/productName";
 import {
@@ -27,6 +35,7 @@ const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
 const ADMIN_USER = "dieteticacanelo@gmail.com";
 const ADMIN_PASSWORD = "TagaBodoque";
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
+const ENABLE_REMOTE_ADMIN_WRITES = import.meta.env.VITE_ENABLE_REMOTE_ADMIN_WRITES !== "false";
 
 const DEFAULT_CATEGORIES = [
   GLUTEN_FREE_FILTER_CATEGORY,
@@ -138,6 +147,7 @@ export default function App() {
     return [...new Set(storedCategories.map((category) => normalizeCategoryLabel(category)).filter(Boolean))];
   });
   const [newCategory, setNewCategory] = useState("");
+  const [categoryAdminError, setCategoryAdminError] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingCategoryValue, setEditingCategoryValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
@@ -163,42 +173,48 @@ export default function App() {
   const [newProductIsGlutenFree, setNewProductIsGlutenFree] = useState(false);
   const [newProductImage, setNewProductImage] = useState("");
   const [productAdminError, setProductAdminError] = useState("");
+  const [adminPendingAction, setAdminPendingAction] = useState("");
+  const [isCatalogApiAvailable, setIsCatalogApiAvailable] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductDraft, setEditingProductDraft] = useState(null);
 
   const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
   useBodyScrollLock(isCartOpen || isAdminModalOpen || isProductEditModalOpen);
 
+  const mergeApiCatalogInState = useCallback(({ categories: apiCategories, products: apiProducts }) => {
+    const sanitizedProducts = sanitizeProducts(apiProducts);
+    setProducts(sanitizedProducts);
+    if (apiCategories.length) {
+      setCategories((currentCategories) => [...new Set([...currentCategories, ...apiCategories])]);
+    }
+    return sanitizedProducts.length > 0 || apiCategories.length > 0;
+  }, []);
+
+  const refreshCatalogFromApi = useCallback(async () => {
+    try {
+      const apiCatalog = await fetchCatalogFromApi();
+      const hasData = mergeApiCatalogInState(apiCatalog);
+      setIsCatalogApiAvailable(true);
+      return hasData;
+    } catch {
+      setIsCatalogApiAvailable(false);
+      return false;
+    }
+  }, [mergeApiCatalogInState]);
+
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      try {
-        const { categories: apiCategories, products: apiProducts } = await fetchCatalogFromApi();
-        if (cancelled || !apiProducts.length) return;
-
-        const sanitizedProducts = sanitizeProducts(apiProducts);
-        if (!sanitizedProducts.length) return;
-
-        setProducts((currentProducts) => {
-          const mergedProducts = new Map(currentProducts.map((product) => [product.id, product]));
-          sanitizedProducts.forEach((product) => {
-            mergedProducts.set(product.id, product);
-          });
-          return Array.from(mergedProducts.values());
-        });
-        if (apiCategories.length) {
-          setCategories((currentCategories) => [...new Set([...currentCategories, ...apiCategories])]);
-        }
-      } catch {
-        // Mantiene catálogo de localStorage / products.json
-      }
+      const hasData = await refreshCatalogFromApi();
+      if (cancelled || hasData) return;
+      // Mantiene catálogo de localStorage / products.json cuando la API no está disponible
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshCatalogFromApi]);
 
   useEffect(() => {
     setProducts((currentProducts) => {
@@ -350,8 +366,34 @@ export default function App() {
     }, {});
   }, [products]);
 
-  const handleAddCategory = (event) => {
+  const ensureCatalogApiWritable = () => {
+    if (!ENABLE_REMOTE_ADMIN_WRITES) {
+      setCategoryAdminError("La gestión remota está desactivada en esta versión del frontend.");
+      setProductAdminError("La gestión remota está desactivada en esta versión del frontend.");
+      return false;
+    }
+    if (isCatalogApiAvailable) return true;
+    setCategoryAdminError(
+      "La API de catálogo no está disponible. Podés navegar el catálogo, pero la gestión está en modo solo lectura."
+    );
+    setProductAdminError(
+      "La API de catálogo no está disponible. Podés navegar el catálogo, pero la gestión está en modo solo lectura."
+    );
+    return false;
+  };
+
+  const withAdminPendingAction = async (actionKey, task) => {
+    setAdminPendingAction(actionKey);
+    try {
+      return await task();
+    } finally {
+      setAdminPendingAction("");
+    }
+  };
+
+  const handleAddCategory = async (event) => {
     event.preventDefault();
+    if (!ensureCatalogApiWritable()) return;
     const normalizedName = normalizeCategoryLabel(newCategory);
     if (!normalizedName) return;
 
@@ -359,10 +401,19 @@ export default function App() {
       (category) => category.toLowerCase() === normalizedName.toLowerCase()
     );
 
-    if (alreadyExists) return;
+    if (alreadyExists) {
+      setCategoryAdminError("Ya existe una categoría con ese nombre.");
+      return;
+    }
 
-    setCategories((currentCategories) => [...currentCategories, normalizedName]);
-    setNewCategory("");
+    setCategoryAdminError("");
+    await withAdminPendingAction("add-category", async () => {
+      await createCategoryApi(normalizedName);
+      await refreshCatalogFromApi();
+      setNewCategory("");
+    }).catch((err) => {
+      setCategoryAdminError(err?.message || "No se pudo crear la categoría.");
+    });
   };
 
   const handleStartEditCategory = (category) => {
@@ -370,7 +421,8 @@ export default function App() {
     setEditingCategoryValue(category);
   };
 
-  const handleSaveCategory = (previousCategory) => {
+  const handleSaveCategory = async (previousCategory) => {
+    if (!ensureCatalogApiWritable()) return;
     const normalizedName = normalizeCategoryLabel(editingCategoryValue);
     if (!normalizedName) return;
 
@@ -380,50 +432,43 @@ export default function App() {
         category.toLowerCase() !== previousCategory.toLowerCase()
     );
 
-    if (alreadyExists) return;
-
-    setCategories((currentCategories) =>
-      currentCategories.map((category) =>
-        category === previousCategory ? normalizedName : category
-      )
-    );
-
-    setProducts((currentProducts) =>
-      currentProducts.map((product) =>
-        product.category === previousCategory
-          ? { ...product, category: normalizedName }
-          : product
-      )
-    );
-
-    if (selectedCategory === previousCategory) {
-      setSelectedCategory(normalizedName);
+    if (alreadyExists) {
+      setCategoryAdminError("Ya existe una categoría con ese nombre.");
+      return;
     }
 
-    setEditingCategory(null);
-    setEditingCategoryValue("");
+    setCategoryAdminError("");
+    await withAdminPendingAction("rename-category", async () => {
+      await renameCategoryApi(previousCategory, normalizedName);
+      await refreshCatalogFromApi();
+      if (selectedCategory === previousCategory) {
+        setSelectedCategory(normalizedName);
+      }
+      setEditingCategory(null);
+      setEditingCategoryValue("");
+    }).catch((err) => {
+      setCategoryAdminError(err?.message || "No se pudo renombrar la categoría.");
+    });
   };
 
-  const handleDeleteCategory = (categoryToDelete) => {
+  const handleDeleteCategory = async (categoryToDelete) => {
+    if (!ensureCatalogApiWritable()) return;
     const shouldDelete = window.confirm(
       `Se va a eliminar la categoría "${categoryToDelete}". Los productos pasarán a "Sin tacc".`
     );
 
     if (!shouldDelete) return;
 
-    setCategories((currentCategories) =>
-      currentCategories.filter((category) => category !== categoryToDelete)
-    );
-
-    setProducts((currentProducts) =>
-      currentProducts.map((product) =>
-        product.category === categoryToDelete ? { ...product, category: "Sin tacc" } : product
-      )
-    );
-
-    if (selectedCategory === categoryToDelete) {
-      setSelectedCategory("Todas");
-    }
+    setCategoryAdminError("");
+    await withAdminPendingAction("delete-category", async () => {
+      await deleteCategoryApi(categoryToDelete);
+      await refreshCatalogFromApi();
+      if (selectedCategory === categoryToDelete) {
+        setSelectedCategory("Todas");
+      }
+    }).catch((err) => {
+      setCategoryAdminError(err?.message || "No se pudo eliminar la categoría.");
+    });
   };
 
   const handleNewProductImageFile = (event) => {
@@ -443,7 +488,8 @@ export default function App() {
     reader.readAsDataURL(selectedFile);
   };
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
+    if (!ensureCatalogApiWritable()) return;
 
     const normalizedName = newProductName.trim();
     const normalizedCategory = normalizeCategoryName(newProductCategory || "");
@@ -507,20 +553,26 @@ export default function App() {
       ],
     };
 
-    setProducts((currentProducts) => [...currentProducts, nextProduct]);
-    expandAdminCategory(normalizedCategory);
-    setNewProductName("");
-    setNewProductCategory("Sin tacc");
-    setNewProductIsVegan(false);
-    setNewProductIsKeto(false);
-    setNewProductIsGlutenFree(false);
-    setNewProductPresentation("1kg");
-    setNewProductPrice("");
-    setNewProductImage("");
-    setProductAdminError("");
+    await withAdminPendingAction("add-product", async () => {
+      await createProductApi(nextProduct);
+      await refreshCatalogFromApi();
+      expandAdminCategory(normalizedCategory);
+      setNewProductName("");
+      setNewProductCategory("Sin tacc");
+      setNewProductIsVegan(false);
+      setNewProductIsKeto(false);
+      setNewProductIsGlutenFree(false);
+      setNewProductPresentation("1kg");
+      setNewProductPrice("");
+      setNewProductImage("");
+      setProductAdminError("");
+    }).catch((err) => {
+      setProductAdminError(err?.message || "No se pudo crear el producto.");
+    });
   };
 
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = async (productId) => {
+    if (!ensureCatalogApiWritable()) return;
     const targetProduct = products.find((product) => product.id === productId);
     if (!targetProduct) return;
 
@@ -529,14 +581,16 @@ export default function App() {
     );
     if (!shouldDelete) return;
 
-    setProducts((currentProducts) =>
-      currentProducts.filter((product) => product.id !== productId)
-    );
-
-    if (editingProductId === productId) {
-      setEditingProductId(null);
-      setEditingProductDraft(null);
-    }
+    await withAdminPendingAction("delete-product", async () => {
+      await deleteProductApi(productId);
+      await refreshCatalogFromApi();
+      if (editingProductId === productId) {
+        setEditingProductId(null);
+        setEditingProductDraft(null);
+      }
+    }).catch((err) => {
+      setProductAdminError(err?.message || "No se pudo eliminar el producto.");
+    });
   };
 
   const handleStartEditProduct = (product) => {
@@ -633,7 +687,8 @@ export default function App() {
     reader.readAsDataURL(selectedFile);
   };
 
-  const handleSaveEditedProduct = (productId) => {
+  const handleSaveEditedProduct = async (productId) => {
+    if (!ensureCatalogApiWritable()) return;
     if (!editingProductDraft || editingProductDraft.id !== productId) return;
 
     const normalizedName = editingProductDraft.name.trim();
@@ -692,13 +747,16 @@ export default function App() {
       })),
     };
 
-    setProducts((currentProducts) =>
-      currentProducts.map((product) => (product.id === productId ? updatedProduct : product))
-    );
-    expandAdminCategory(normalizedCategory);
-    setEditingProductId(null);
-    setEditingProductDraft(null);
-    setProductAdminError("");
+    await withAdminPendingAction("update-product", async () => {
+      await updateProductApi(productId, updatedProduct);
+      await refreshCatalogFromApi();
+      expandAdminCategory(normalizedCategory);
+      setEditingProductId(null);
+      setEditingProductDraft(null);
+      setProductAdminError("");
+    }).catch((err) => {
+      setProductAdminError(err?.message || "No se pudo actualizar el producto.");
+    });
   };
 
   const handleCancelEditProduct = () => {
@@ -740,6 +798,7 @@ export default function App() {
     setEditingCategory(null);
     setEditingCategoryValue("");
     setNewCategory("");
+    setCategoryAdminError("");
     setEditingProductId(null);
     setEditingProductDraft(null);
     setNewProductName("");
@@ -751,6 +810,7 @@ export default function App() {
     setNewProductPrice("");
     setNewProductImage("");
     setProductAdminError("");
+    setAdminPendingAction("");
   };
 
   const handleAdminAccessClick = () => {
@@ -766,6 +826,7 @@ export default function App() {
   const handleCancelEditCategory = () => {
     setEditingCategory(null);
     setEditingCategoryValue("");
+    setCategoryAdminError("");
   };
 
   const handleCategorySelect = (category) => {
@@ -933,6 +994,7 @@ export default function App() {
             editingCategoryValue={editingCategoryValue}
             onEditingCategoryValueChange={setEditingCategoryValue}
             onAddCategory={handleAddCategory}
+            categoryAdminError={categoryAdminError}
             onStartEditCategory={handleStartEditCategory}
             onSaveCategory={handleSaveCategory}
             onCancelEditCategory={handleCancelEditCategory}
@@ -956,6 +1018,8 @@ export default function App() {
             onNewProductImageFile={handleNewProductImageFile}
             onAddProduct={handleAddProduct}
             productAdminError={productAdminError}
+            adminPendingAction={adminPendingAction}
+            isCatalogApiAvailable={isCatalogApiAvailable}
             editingProductId={editingProductId}
             editingProductDraft={editingProductDraft}
             onStartEditProduct={handleStartEditProduct}

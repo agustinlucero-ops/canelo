@@ -50,7 +50,10 @@ export function sanitizeProducts(productList) {
       const id = String(product?.id ?? "").trim() || `producto-${index + 1}`;
       const normalizedCategory =
         normalizeCategoryLabel(String(product?.category ?? "").trim()) || "Sin tacc";
-      const { category, isVegan } = resolveProductCategoryAndVegan(product, normalizedCategory);
+      const { category, isVegan, isKeto, isGlutenFree } = resolveProductCategoryAndVegan(
+        product,
+        normalizedCategory
+      );
       const name = normalizeProductName(String(product?.name ?? "").trim(), category);
       const image = String(product?.image ?? "").trim() || DEFAULT_PRODUCT_IMAGE;
       const presentations = sanitizePresentations(product?.presentations);
@@ -67,6 +70,8 @@ export function sanitizeProducts(productList) {
         image,
         presentations,
         isVegan,
+        isKeto,
+        isGlutenFree,
         outOfStock: Boolean(product?.outOfStock),
       };
     })

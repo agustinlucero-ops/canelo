@@ -28,6 +28,8 @@ async function upsertProduct(sql, product) {
       category,
       image,
       is_vegan,
+      is_keto,
+      is_gluten_free,
       out_of_stock,
       presentations
     )
@@ -37,6 +39,8 @@ async function upsertProduct(sql, product) {
       ${product.category},
       ${product.image},
       ${product.isVegan},
+      ${product.isKeto},
+      ${product.isGlutenFree},
       ${product.outOfStock},
       ${presentationsJson}::jsonb
     )
@@ -45,6 +49,8 @@ async function upsertProduct(sql, product) {
       category = EXCLUDED.category,
       image = EXCLUDED.image,
       is_vegan = EXCLUDED.is_vegan,
+      is_keto = EXCLUDED.is_keto,
+      is_gluten_free = EXCLUDED.is_gluten_free,
       out_of_stock = EXCLUDED.out_of_stock,
       presentations = EXCLUDED.presentations,
       updated_at = now()

@@ -1,12 +1,10 @@
 import "dotenv/config";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSql } from "../server/db.mjs";
-
-const MIGRATION_ID = "001_catalog";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const migrationPath = join(__dirname, "..", "db", "migrations", `${MIGRATION_ID}.sql`);
+const migrationsPath = join(__dirname, "..", "db", "migrations");
 
 function splitStatements(sqlText) {
   return sqlText
@@ -15,10 +13,22 @@ function splitStatements(sqlText) {
     .filter(Boolean);
 }
 
-async function isMigrationApplied(sql) {
+async function ensureMigrationsTable(sql) {
+  await sql.query(
+    `
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        id TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `,
+    []
+  );
+}
+
+async function isMigrationApplied(sql, migrationId) {
   try {
     const rows = await sql`
-      SELECT id FROM schema_migrations WHERE id = ${MIGRATION_ID}
+      SELECT id FROM schema_migrations WHERE id = ${migrationId}
     `;
     return rows.length > 0;
   } catch (err) {
@@ -27,27 +37,43 @@ async function isMigrationApplied(sql) {
   }
 }
 
+async function listMigrationFiles() {
+  const files = readdirSync(migrationsPath).filter((fileName) => fileName.toLowerCase().endsWith(".sql"));
+  return files.sort((a, b) => a.localeCompare(b, "en"));
+}
+
 async function main() {
   const sql = getSql();
+  await ensureMigrationsTable(sql);
+  const migrationFiles = await listMigrationFiles();
+  let appliedCount = 0;
 
-  if (await isMigrationApplied(sql)) {
-    console.log(`Migración ${MIGRATION_ID} ya aplicada.`);
-    return;
+  for (const fileName of migrationFiles) {
+    const migrationId = fileName.replace(/\.sql$/i, "");
+    if (await isMigrationApplied(sql, migrationId)) {
+      console.log(`Migración ${migrationId} ya aplicada.`);
+      continue;
+    }
+
+    const migrationPath = join(migrationsPath, fileName);
+    const migrationSql = readFileSync(migrationPath, "utf8");
+    const statements = splitStatements(migrationSql);
+
+    for (const statement of statements) {
+      await sql.query(statement, []);
+    }
+
+    await sql`
+      INSERT INTO schema_migrations (id) VALUES (${migrationId})
+      ON CONFLICT (id) DO NOTHING
+    `;
+
+    appliedCount += 1;
+    console.log(`Migración ${migrationId} aplicada (${statements.length} sentencias).`);
   }
-
-  const migrationSql = readFileSync(migrationPath, "utf8");
-  const statements = splitStatements(migrationSql);
-
-  for (const statement of statements) {
-    await sql.query(statement, []);
+  if (!appliedCount) {
+    console.log("No hay migraciones pendientes.");
   }
-
-  await sql`
-    INSERT INTO schema_migrations (id) VALUES (${MIGRATION_ID})
-    ON CONFLICT (id) DO NOTHING
-  `;
-
-  console.log(`Migración ${MIGRATION_ID} aplicada (${statements.length} sentencias).`);
 }
 
 main().catch((err) => {
