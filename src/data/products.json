@@ -5,9 +5,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 4200 },
-      { "label": "500g", "price": 16000 },
-      { "label": "1kg", "price": 25000 }
+      {
+        "label": "100g",
+        "price": 4200
+      },
+      {
+        "label": "500g",
+        "price": 16000
+      },
+      {
+        "label": "1kg",
+        "price": 25000
+      }
     ]
   },
   {
@@ -16,9 +25,18 @@
     "category": "Frutos secos",
     "image": "/images/products/pasas.svg",
     "presentations": [
-      { "label": "100g", "price": 3500 },
-      { "label": "500g", "price": 12900 },
-      { "label": "1kg", "price": 20000 }
+      {
+        "label": "100g",
+        "price": 3500
+      },
+      {
+        "label": "500g",
+        "price": 12900
+      },
+      {
+        "label": "1kg",
+        "price": 20000
+      }
     ]
   },
   {
@@ -27,9 +45,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 7100 },
-      { "label": "500g", "price": 28400 },
-      { "label": "1kg", "price": 45000 }
+      {
+        "label": "100g",
+        "price": 7100
+      },
+      {
+        "label": "500g",
+        "price": 28400
+      },
+      {
+        "label": "1kg",
+        "price": 45000
+      }
     ]
   },
   {
@@ -38,9 +65,18 @@
     "category": "Frutos secos",
     "image": "/images/products/pasas.svg",
     "presentations": [
-      { "label": "100g", "price": 3000 },
-      { "label": "500g", "price": 10700 },
-      { "label": "1kg", "price": 16500 }
+      {
+        "label": "100g",
+        "price": 3000
+      },
+      {
+        "label": "500g",
+        "price": 10700
+      },
+      {
+        "label": "1kg",
+        "price": 16500
+      }
     ]
   },
   {
@@ -49,9 +85,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 3900 },
-      { "label": "500g", "price": 14400 },
-      { "label": "1kg", "price": 22400 }
+      {
+        "label": "100g",
+        "price": 3900
+      },
+      {
+        "label": "500g",
+        "price": 14400
+      },
+      {
+        "label": "1kg",
+        "price": 22400
+      }
     ]
   },
   {
@@ -60,9 +105,18 @@
     "category": "Frutos secos",
     "image": "/images/products/pasas.svg",
     "presentations": [
-      { "label": "100g", "price": 2500 },
-      { "label": "500g", "price": 8600 },
-      { "label": "1kg", "price": 13000 }
+      {
+        "label": "100g",
+        "price": 2500
+      },
+      {
+        "label": "500g",
+        "price": 8600
+      },
+      {
+        "label": "1kg",
+        "price": 13000
+      }
     ]
   },
   {
@@ -71,9 +125,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 4200 },
-      { "label": "500g", "price": 16000 },
-      { "label": "1kg", "price": 25000 }
+      {
+        "label": "100g",
+        "price": 4200
+      },
+      {
+        "label": "500g",
+        "price": 16000
+      },
+      {
+        "label": "1kg",
+        "price": 25000
+      }
     ]
   },
   {
@@ -82,9 +145,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 4300 },
-      { "label": "500g", "price": 16300 },
-      { "label": "1kg", "price": 25500 }
+      {
+        "label": "100g",
+        "price": 4300
+      },
+      {
+        "label": "500g",
+        "price": 16300
+      },
+      {
+        "label": "1kg",
+        "price": 25500
+      }
     ]
   },
   {
@@ -93,9 +165,18 @@
     "category": "Frutos secos",
     "image": "/images/products/pasas.svg",
     "presentations": [
-      { "label": "100g", "price": 2000 },
-      { "label": "500g", "price": 6600 },
-      { "label": "1kg", "price": 9800 }
+      {
+        "label": "100g",
+        "price": 2000
+      },
+      {
+        "label": "500g",
+        "price": 6600
+      },
+      {
+        "label": "1kg",
+        "price": 9800
+      }
     ]
   },
   {
@@ -104,9 +185,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 6900 },
-      { "label": "500g", "price": 27300 },
-      { "label": "1kg", "price": 43200 }
+      {
+        "label": "100g",
+        "price": 6900
+      },
+      {
+        "label": "500g",
+        "price": 27300
+      },
+      {
+        "label": "1kg",
+        "price": 43200
+      }
     ]
   },
   {
@@ -115,9 +205,18 @@
     "category": "Frutos secos",
     "image": "/images/products/nuez.svg",
     "presentations": [
-      { "label": "100g", "price": 12500 },
-      { "label": "500g", "price": 51300 },
-      { "label": "1kg", "price": 82000 }
+      {
+        "label": "100g",
+        "price": 12500
+      },
+      {
+        "label": "500g",
+        "price": 51300
+      },
+      {
+        "label": "1kg",
+        "price": 82000
+      }
     ]
   },
   {
@@ -126,9 +225,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 2700 },
-      { "label": "500g", "price": 9500 },
-      { "label": "1kg", "price": 14500 }
+      {
+        "label": "100g",
+        "price": 2700
+      },
+      {
+        "label": "500g",
+        "price": 9500
+      },
+      {
+        "label": "1kg",
+        "price": 14500
+      }
     ]
   },
   {
@@ -137,9 +245,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 3300 },
-      { "label": "500g", "price": 12000 },
-      { "label": "1kg", "price": 18500 }
+      {
+        "label": "100g",
+        "price": 3300
+      },
+      {
+        "label": "500g",
+        "price": 12000
+      },
+      {
+        "label": "1kg",
+        "price": 18500
+      }
     ]
   },
   {
@@ -148,9 +265,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 3900 },
-      { "label": "500g", "price": 14500 },
-      { "label": "1kg", "price": 22500 }
+      {
+        "label": "100g",
+        "price": 3900
+      },
+      {
+        "label": "500g",
+        "price": 14500
+      },
+      {
+        "label": "1kg",
+        "price": 22500
+      }
     ]
   },
   {
@@ -159,9 +285,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 4500 },
-      { "label": "500g", "price": 17200 },
-      { "label": "1kg", "price": 27000 }
+      {
+        "label": "100g",
+        "price": 4500
+      },
+      {
+        "label": "500g",
+        "price": 17200
+      },
+      {
+        "label": "1kg",
+        "price": 27000
+      }
     ]
   },
   {
@@ -170,9 +305,18 @@
     "category": "Frutos secos",
     "image": "/images/products/almendra.svg",
     "presentations": [
-      { "label": "100g", "price": 8900 },
-      { "label": "500g", "price": 35800 },
-      { "label": "1kg", "price": 57000 }
+      {
+        "label": "100g",
+        "price": 8900
+      },
+      {
+        "label": "500g",
+        "price": 35800
+      },
+      {
+        "label": "1kg",
+        "price": 57000
+      }
     ]
   },
   {
@@ -180,28 +324,48 @@
     "name": "CUCA tradicional",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 10300 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 10300
+      }
+    ]
   },
   {
     "id": "cuca-cacao-coco",
     "name": "CUCA cacao y coco",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 10300 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 10300
+      }
+    ]
   },
   {
     "id": "tutti-grani-almendra",
     "name": "TUTTI GRANI almendra",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 9800 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 9800
+      }
+    ]
   },
   {
     "id": "tutti-grani-tradicional",
     "name": "TUTTI GRANI tradicional",
     "category": "Granolas",
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 9800 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 9800
+      }
+    ]
   },
   {
     "id": "cuca-vegana-stevia",
@@ -209,7 +373,12 @@
     "category": "Granolas",
     "isVegan": true,
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 10300 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 10300
+      }
+    ]
   },
   {
     "id": "tutti-grani-stevia-vegana",
@@ -217,67 +386,108 @@
     "category": "Granolas",
     "isVegan": true,
     "image": "/images/products/granola.svg",
-    "presentations": [{ "label": "1kg", "price": 9800 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 9800
+      }
+    ]
   },
   {
     "id": "semillas-chia",
     "name": "Semillas de chia",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "image": "/images/products/chia.svg",
     "presentations": [
-      { "label": "100g", "price": 2000 },
-      { "label": "500g", "price": 6200 }
+      {
+        "label": "100g",
+        "price": 2000
+      },
+      {
+        "label": "500g",
+        "price": 6200
+      }
     ]
   },
   {
     "id": "semillas-lino",
     "name": "Semillas de lino",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "image": "/images/products/lino.svg",
     "presentations": [
-      { "label": "100g", "price": 1400 },
-      { "label": "500g", "price": 3600 }
+      {
+        "label": "100g",
+        "price": 1400
+      },
+      {
+        "label": "500g",
+        "price": 3600
+      }
     ]
   },
   {
     "id": "semillas-psyllium",
     "name": "Psyllium",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "isKeto": true,
     "image": "/images/products/chia.svg",
     "presentations": [
-      { "label": "100g", "price": 3500 },
-      { "label": "500g", "price": 12900 }
+      {
+        "label": "100g",
+        "price": 3500
+      },
+      {
+        "label": "500g",
+        "price": 12900
+      }
     ]
   },
   {
     "id": "quinoa-tricolor",
     "name": "Quinoa tricolor",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "image": "/images/products/chia.svg",
     "presentations": [
-      { "label": "100g", "price": 1900 },
-      { "label": "500g", "price": 5800 }
+      {
+        "label": "100g",
+        "price": 1900
+      },
+      {
+        "label": "500g",
+        "price": 5800
+      }
     ]
   },
   {
     "id": "sesamo-blanco",
     "name": "Sesamo blanco",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "image": "/images/products/chia.svg",
     "presentations": [
-      { "label": "100g", "price": 2100 },
-      { "label": "500g", "price": 6700 }
+      {
+        "label": "100g",
+        "price": 2100
+      },
+      {
+        "label": "500g",
+        "price": 6700
+      }
     ]
   },
   {
     "id": "mix-semillas",
     "name": "Mix semillas",
-    "category": "Harinas y legumbres",
+    "category": "Semillas",
     "image": "/images/products/chia.svg",
     "presentations": [
-      { "label": "100g", "price": 1800 },
-      { "label": "500g", "price": 5500 }
+      {
+        "label": "100g",
+        "price": 1800
+      },
+      {
+        "label": "500g",
+        "price": 5500
+      }
     ]
   },
   {
@@ -285,104 +495,173 @@
     "name": "Pasta de mani Entre Nuts",
     "category": "Pastas de mani",
     "image": "/images/products/mani.svg",
-    "presentations": [{ "label": "370g", "price": 4400 }]
+    "presentations": [
+      {
+        "label": "370g",
+        "price": 4400
+      }
+    ]
   },
   {
     "id": "pasta-kor-fit-stevia",
     "name": "Pasta de mani Kor Fit natural c stevia",
     "category": "Pastas de mani",
     "image": "/images/products/mani.svg",
-    "presentations": [{ "label": "350g", "price": 4200 }]
+    "presentations": [
+      {
+        "label": "350g",
+        "price": 4200
+      }
+    ]
   },
   {
     "id": "pasta-kor-fit-proteica",
     "name": "Pasta de mani Kor Fit proteica",
     "category": "Pastas de mani",
     "image": "/images/products/mani.svg",
-    "presentations": [{ "label": "350g", "price": 5000 }]
+    "presentations": [
+      {
+        "label": "350g",
+        "price": 5000
+      }
+    ]
   },
   {
     "id": "pasta-mani-king",
     "name": "Pasta de mani Mani King natural",
     "category": "Pastas de mani",
     "image": "/images/products/mani.svg",
-    "presentations": [{ "label": "485g", "price": 3900 }]
+    "presentations": [
+      {
+        "label": "485g",
+        "price": 3900
+      }
+    ]
   },
   {
     "id": "pasta-oddis-clasica",
     "name": "Pasta de mani Oddis clasica",
     "category": "Pastas de mani",
     "image": "/images/products/mani.svg",
-    "presentations": [{ "label": "350g", "price": 3900 }]
+    "presentations": [
+      {
+        "label": "350g",
+        "price": 3900
+      }
+    ]
   },
   {
     "id": "harina-almendra-importada",
     "name": "Harina de almendra importada",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/harina-almendra.svg",
     "presentations": [
-      { "label": "500g", "price": 14100 },
-      { "label": "1kg", "price": 24000 }
+      {
+        "label": "500g",
+        "price": 14100
+      },
+      {
+        "label": "1kg",
+        "price": 24000
+      }
     ]
   },
   {
     "id": "harina-coco",
     "name": "Harina de coco",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "isKeto": true,
     "image": "/images/products/harina-almendra.svg",
     "presentations": [
-      { "label": "500g", "price": 5100 },
-      { "label": "1kg", "price": 12100 }
+      {
+        "label": "500g",
+        "price": 5100
+      },
+      {
+        "label": "1kg",
+        "price": 12100
+      }
     ]
   },
   {
     "id": "harina-garbanzo",
     "name": "Harina de garbanzo",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/harina-almendra.svg",
     "presentations": [
-      { "label": "500g", "price": 6100 },
-      { "label": "1kg", "price": 3900 }
+      {
+        "label": "500g",
+        "price": 6100
+      },
+      {
+        "label": "1kg",
+        "price": 3900
+      }
     ]
   },
   {
     "id": "harina-lentejas",
     "name": "Harina de lentejas",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/harina-almendra.svg",
     "presentations": [
-      { "label": "500g", "price": 2100 },
-      { "label": "1kg", "price": 3400 }
+      {
+        "label": "500g",
+        "price": 2100
+      },
+      {
+        "label": "1kg",
+        "price": 3400
+      }
     ]
   },
   {
     "id": "avena-gruesa",
     "name": "Avena gruesa",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/avena.svg",
-    "presentations": [{ "label": "1kg", "price": 2800 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 2800
+      }
+    ]
   },
   {
     "id": "avena-instantanea",
     "name": "Avena instantanea",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/avena.svg",
-    "presentations": [{ "label": "1kg", "price": 3000 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 3000
+      }
+    ]
   },
   {
     "id": "arroz-integral-largo-fino",
     "name": "Arroz integral largo fino",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/avena.svg",
-    "presentations": [{ "label": "1kg", "price": 3200 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 3200
+      }
+    ]
   },
   {
     "id": "arroz-yamani",
     "name": "Arroz yamani",
-    "category": "Harinas y legumbres",
+    "category": "Avenas/Arroz/Harinas",
     "image": "/images/products/avena.svg",
-    "presentations": [{ "label": "1kg", "price": 3000 }]
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 3000
+      }
+    ]
   },
   {
     "id": "aritos-frutados",
@@ -390,8 +669,14 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 1800 },
-      { "label": "500g", "price": 5600 }
+      {
+        "label": "100g",
+        "price": 1800
+      },
+      {
+        "label": "500g",
+        "price": 5600
+      }
     ]
   },
   {
@@ -400,8 +685,14 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 1800 },
-      { "label": "500g", "price": 5600 }
+      {
+        "label": "100g",
+        "price": 1800
+      },
+      {
+        "label": "500g",
+        "price": 5600
+      }
     ]
   },
   {
@@ -410,8 +701,14 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 1800 },
-      { "label": "500g", "price": 5600 }
+      {
+        "label": "100g",
+        "price": 1800
+      },
+      {
+        "label": "500g",
+        "price": 5600
+      }
     ]
   },
   {
@@ -420,8 +717,14 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 2300 },
-      { "label": "500g", "price": 7600 }
+      {
+        "label": "100g",
+        "price": 2300
+      },
+      {
+        "label": "500g",
+        "price": 7600
+      }
     ]
   },
   {
@@ -430,8 +733,14 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 1900 },
-      { "label": "500g", "price": 6200 }
+      {
+        "label": "100g",
+        "price": 1900
+      },
+      {
+        "label": "500g",
+        "price": 6200
+      }
     ]
   },
   {
@@ -440,35 +749,306 @@
     "category": "Cereales",
     "image": "/images/products/avena.svg",
     "presentations": [
-      { "label": "100g", "price": 2200 },
-      { "label": "500g", "price": 7300 }
+      {
+        "label": "100g",
+        "price": 2200
+      },
+      {
+        "label": "500g",
+        "price": 7300
+      }
     ]
   },
   {
     "id": "miel-beepure-clasica",
     "name": "Miel Beepure clasica",
-    "category": "Condimentos",
+    "category": "Miel/Polen",
     "image": "/images/products/coco.svg",
     "presentations": [
-      { "label": "500g", "price": 7800 },
-      { "label": "900g", "price": 13500 }
+      {
+        "label": "500g",
+        "price": 7800
+      },
+      {
+        "label": "900g",
+        "price": 13500
+      }
     ]
   },
   {
     "id": "miel-beepure-cremosa",
     "name": "Miel Beepure cremosa",
-    "category": "Condimentos",
+    "category": "Miel/Polen",
     "image": "/images/products/coco.svg",
     "presentations": [
-      { "label": "500g", "price": 8500 },
-      { "label": "900g", "price": 15400 }
+      {
+        "label": "500g",
+        "price": 8500
+      },
+      {
+        "label": "900g",
+        "price": 15400
+      }
     ]
   },
   {
     "id": "ghee-beepure",
     "name": "Ghee Beepure",
-    "category": "Aceites",
+    "category": "Ghee",
     "image": "/images/products/coco.svg",
-    "presentations": [{ "label": "270g", "price": 13500 }]
+    "presentations": [
+      {
+        "label": "270g",
+        "price": 13500
+      }
+    ]
+  },
+  {
+    "id": "mani-con-sal",
+    "name": "Mani con sal",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 4300
+      }
+    ]
+  },
+  {
+    "id": "mani-crudo",
+    "name": "Mani crudo",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 3900
+      }
+    ]
+  },
+  {
+    "id": "mani-con-cascara",
+    "name": "Mani con cascara",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 5600
+      }
+    ]
+  },
+  {
+    "id": "mani-saborizado",
+    "name": "Mani saborizado",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 7500
+      }
+    ]
+  },
+  {
+    "id": "mani-sin-sal",
+    "name": "Mani sin sal",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 4300
+      }
+    ]
+  },
+  {
+    "id": "mix-cervecero",
+    "name": "Mix cervecero",
+    "category": "Maní suelto",
+    "image": "/images/products/mani.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "id": "polen-natural-granulado",
+    "name": "Polen natural granulado",
+    "category": "Miel/Polen",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 18700
+      }
+    ]
+  },
+  {
+    "id": "ghee-canelo-casero",
+    "name": "Ghee Canelo 100% casero",
+    "category": "Ghee",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "270g",
+        "price": 13500
+      }
+    ]
+  },
+  {
+    "id": "barrita-integra-avena-almendra-nuez",
+    "name": "Barrita INTEGRA avena almendra y nuez",
+    "category": "Barritas",
+    "image": "/images/products/granola.svg",
+    "presentations": [
+      {
+        "label": "1un",
+        "price": 2600
+      },
+      {
+        "label": "10un",
+        "price": 22000
+      }
+    ]
+  },
+  {
+    "id": "barrita-integra-avena-chocolate",
+    "name": "Barrita INTEGRA avena y chocolate",
+    "category": "Barritas",
+    "image": "/images/products/granola.svg",
+    "presentations": [
+      {
+        "label": "1un",
+        "price": 2600
+      },
+      {
+        "label": "10un",
+        "price": 22000
+      }
+    ]
+  },
+  {
+    "id": "barrita-olympic-coco-chocolate-frutilla",
+    "name": "Barrita OLYMPIC coco chocolate frutilla",
+    "category": "Barritas",
+    "image": "/images/products/granola.svg",
+    "presentations": [
+      {
+        "label": "1un",
+        "price": 3200
+      },
+      {
+        "label": "10un",
+        "price": 25000
+      }
+    ]
+  },
+  {
+    "id": "combo-de-todo-un-poco",
+    "name": "Combo De todo un poco",
+    "category": "Combos",
+    "image": "/images/products/almendra.svg",
+    "presentations": [
+      {
+        "label": "combo",
+        "price": 44000
+      }
+    ]
+  },
+  {
+    "id": "combo-sport",
+    "name": "Combo Sport",
+    "category": "Combos",
+    "image": "/images/products/almendra.svg",
+    "presentations": [
+      {
+        "label": "combo",
+        "price": 32500
+      }
+    ]
+  },
+  {
+    "id": "combo-full-sport",
+    "name": "Combo Full sport",
+    "category": "Combos",
+    "image": "/images/products/almendra.svg",
+    "presentations": [
+      {
+        "label": "combo",
+        "price": 59900
+      }
+    ]
+  },
+  {
+    "id": "azucar-integral-mascabo",
+    "name": "Azucar integral mascabo",
+    "category": "Varios",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 5200
+      }
+    ]
+  },
+  {
+    "id": "azucar-negra",
+    "name": "Azucar negra",
+    "category": "Varios",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 4100
+      }
+    ]
+  },
+  {
+    "id": "cacao-amargo",
+    "name": "Cacao amargo",
+    "category": "Varios",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "1kg",
+        "price": 17000
+      }
+    ]
+  },
+  {
+    "id": "aceite-coco-entre-nuts-neutro",
+    "name": "Aceite de coco Entre-Nuts neutro",
+    "category": "Aceite de coco",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "200g",
+        "price": 6500
+      },
+      {
+        "label": "360g",
+        "price": 10200
+      }
+    ]
+  },
+  {
+    "id": "aceite-coco-entre-nuts-virgen",
+    "name": "Aceite de coco Entre-Nuts virgen",
+    "category": "Aceite de coco",
+    "image": "/images/products/coco.svg",
+    "presentations": [
+      {
+        "label": "200g",
+        "price": 11000
+      },
+      {
+        "label": "360g",
+        "price": 17000
+      }
+    ]
   }
 ]

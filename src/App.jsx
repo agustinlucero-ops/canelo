@@ -41,14 +41,20 @@ const DEFAULT_CATEGORIES = [
   GLUTEN_FREE_FILTER_CATEGORY,
   "Granolas",
   KETO_FILTER_CATEGORY,
-  "Cereales",
-  "Condimentos",
-  "Congelados",
-  "Aceites",
-  "Pastas de mani",
   "Frutos secos",
+  "Semillas",
+  "Avenas/Arroz/Harinas",
+  "Cereales",
+  "Pastas de mani",
+  "Maní suelto",
+  "Miel/Polen",
+  "Ghee",
+  "Barritas",
+  "Combos",
+  "Varios",
+  "Aceite de coco",
   "Veganos",
-  "Harinas y legumbres"
+  "Congelados"
 ];
 
 const normalizeCategoryName = (value) => value.trim().replace(/\s+/g, " ");

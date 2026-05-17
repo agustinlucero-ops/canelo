@@ -4,15 +4,21 @@ import { resolveProductCategoryAndVegan } from "../../src/utils/productCategorie
 export const DEFAULT_CATEGORIES = [
   "Sin tacc",
   "Granolas",
-  "Apto keto",
-  "Cereales",
-  "Condimentos",
-  "Congelados",
-  "Aceites",
-  "Pastas de mani",
+  "Keto",
   "Frutos secos",
+  "Semillas",
+  "Avenas/Arroz/Harinas",
+  "Cereales",
+  "Pastas de mani",
+  "Maní suelto",
+  "Miel/Polen",
+  "Ghee",
+  "Barritas",
+  "Combos",
+  "Varios",
+  "Aceite de coco",
   "Veganos",
-  "Harinas y legumbres",
+  "Congelados",
 ];
 
 export const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
