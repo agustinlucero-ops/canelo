@@ -54,13 +54,26 @@ export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity
                     <label htmlFor={`qty-${item.key}`} className="field-label">
                       Cant.
                     </label>
-                    <input
-                      id={`qty-${item.key}`}
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(event) => setQuantity(item.key, Number(event.target.value))}
-                    />
+                    <div className="quantity-stepper">
+                      <button
+                        type="button"
+                        className="quantity-stepper-button"
+                        aria-label={`Restar una unidad de ${item.name}`}
+                        onClick={() => setQuantity(item.key, Math.max(1, item.quantity - 1))}
+                        disabled={item.quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <input id={`qty-${item.key}`} type="text" value={item.quantity} readOnly />
+                      <button
+                        type="button"
+                        className="quantity-stepper-button"
+                        aria-label={`Sumar una unidad de ${item.name}`}
+                        onClick={() => setQuantity(item.key, item.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button className="text-button" onClick={() => removeItem(item.key)}>
                       Quitar
                     </button>

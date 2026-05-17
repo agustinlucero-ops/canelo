@@ -1,5 +1,5 @@
 ﻿import { ShoppingCart } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
 import CartDrawer from "./components/CartDrawer";
@@ -133,7 +133,23 @@ function loadStoredData(storageKey, fallback) {
 
 export default function App() {
   const [isCartOpen, setCartOpen] = useState(false);
+  const [isCartBadgeBumping, setIsCartBadgeBumping] = useState(false);
+  const prevTotalItemsRef = useRef(0);
   const { items, totals, addItem, setQuantity, removeItem } = useCart();
+
+  useEffect(() => {
+    if (totals.totalItems > prevTotalItemsRef.current) {
+      setIsCartBadgeBumping(false);
+      const frameId = requestAnimationFrame(() => setIsCartBadgeBumping(true));
+      const timeoutId = window.setTimeout(() => setIsCartBadgeBumping(false), 500);
+      prevTotalItemsRef.current = totals.totalItems;
+      return () => {
+        cancelAnimationFrame(frameId);
+        window.clearTimeout(timeoutId);
+      };
+    }
+    prevTotalItemsRef.current = totals.totalItems;
+  }, [totals.totalItems]);
   const [products, setProducts] = useState(() => {
     const fallbackProducts = sanitizeProducts(initialProducts);
     const storedVersion = loadStoredData(PRODUCTS_VERSION_STORAGE_KEY, 0);
@@ -1051,7 +1067,11 @@ export default function App() {
       >
         <ShoppingCart aria-hidden="true" />
         {totals.totalItems > 0 && (
-          <span className="cart-badge" aria-hidden="true">
+          <span
+            className={`cart-badge${isCartBadgeBumping ? " cart-badge--bump" : ""}`}
+            aria-hidden="true"
+            onAnimationEnd={() => setIsCartBadgeBumping(false)}
+          >
             {totals.totalItems}
           </span>
         )}

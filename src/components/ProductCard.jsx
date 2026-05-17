@@ -25,6 +25,7 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
     () => normalizeProductName(product.name, product.category),
     [product.category, product.name]
   );
+  const hasNutritionBadges = product.isVegan || product.isKeto || product.isGlutenFree;
 
   const handleAdd = () => {
     if (product.outOfStock) return;
@@ -33,31 +34,35 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
 
   return (
     <article className="product-card">
-      <img
-        src={product.image}
-        alt={displayName}
-        className="product-image"
-        loading="lazy"
-      />
+      <div className="product-media">
+        <img
+          src={product.image}
+          alt={displayName}
+          className="product-image"
+          loading="lazy"
+        />
+        {hasNutritionBadges && (
+          <div className="product-floating-badges" aria-label="Insignias del producto">
+            {product.isVegan && (
+              <span className="vegan-badge" aria-label="Producto vegano">
+                <Vegan aria-hidden="true" />
+              </span>
+            )}
+            {product.isKeto && (
+              <span className="keto-badge" aria-label="Producto apto keto">
+                <img src="/images/keto-badge.svg" alt="" aria-hidden="true" />
+              </span>
+            )}
+            {product.isGlutenFree && (
+              <span className="gluten-free-badge" aria-label="Producto sin TACC">
+                <img src="/images/gluten-free.svg" alt="" aria-hidden="true" />
+              </span>
+            )}
+          </div>
+        )}
+        {product.outOfStock && <span className="stock-badge product-stock-badge">Sin stock</span>}
+      </div>
       <div className="product-content">
-        <div className="product-badges">
-          {product.isVegan && (
-            <span className="vegan-badge" aria-label="Producto vegano">
-              <Vegan aria-hidden="true" />
-            </span>
-          )}
-          {product.isKeto && (
-            <span className="keto-badge" aria-label="Producto apto keto">
-              <img src="/images/keto-badge.svg" alt="" aria-hidden="true" />
-            </span>
-          )}
-          {product.isGlutenFree && (
-            <span className="gluten-free-badge" aria-label="Producto sin TACC">
-              <img src="/images/gluten-free.svg" alt="" aria-hidden="true" />
-            </span>
-          )}
-          {product.outOfStock && <span className="stock-badge">Sin stock</span>}
-        </div>
         <h3>{displayName}</h3>
         <p className="product-price">{formatPrice(currentPresentation.price)}</p>
 

@@ -1,5 +1,5 @@
-import { X } from "lucide-react";
-import ProductCard from "./ProductCard";
+import { Trash2, X } from "lucide-react";
+import { formatPrice } from "../utils/whatsapp";
 
 function draftToPreviewProduct(draft) {
   const presentations = draft.presentations
@@ -69,8 +69,31 @@ export default function ProductEditModal({
         </div>
 
         <section className="product-edit-preview" aria-label="Vista previa en catálogo">
-          <p className="product-edit-preview-label">Vista en catálogo</p>
-          <ProductCard product={previewProduct} onAddToCart={() => {}} preview />
+          <button
+            type="button"
+            className="admin-icon-button product-edit-preview-close"
+            onClick={onClose}
+            aria-label="Cerrar"
+            disabled={isSaving}
+          >
+            <X aria-hidden="true" />
+          </button>
+          <div className="product-edit-preview-body">
+            <img
+              src={previewProduct.image}
+              alt={previewProduct.name}
+              className="product-edit-preview-image"
+            />
+            <div className="product-edit-preview-copy">
+              <p className="product-edit-preview-note">Vista previa en catálogo</p>
+              <p className="product-edit-preview-price">
+                {formatPrice(previewProduct.presentations[0].price)}
+              </p>
+              <span className="product-edit-preview-chip">
+                {previewProduct.presentations[0].label}
+              </span>
+            </div>
+          </div>
         </section>
 
         <form
@@ -80,14 +103,22 @@ export default function ProductEditModal({
             onSave();
           }}
         >
+          <label className="field-label" htmlFor="product-edit-name">
+            Nombre del producto
+          </label>
           <input
+            id="product-edit-name"
             type="text"
             value={draft.name}
             onChange={(event) => onEditProductField("name", event.target.value)}
-            placeholder="Nombre"
+            placeholder="Nombre del producto"
             disabled={isActionDisabled}
           />
+          <label className="field-label" htmlFor="product-edit-category">
+            Categoría
+          </label>
           <select
+            id="product-edit-category"
             className="select-field"
             value={draft.category}
             onChange={(event) => onEditProductField("category", event.target.value)}
@@ -100,63 +131,76 @@ export default function ProductEditModal({
             ))}
           </select>
 
-          <label className="field-label" htmlFor="product-edit-image-url">
-            Foto (URL)
-          </label>
-          <input
-            id="product-edit-image-url"
-            type="url"
-            value={draft.image}
-            onChange={(event) => onEditProductField("image", event.target.value)}
-            placeholder="URL de foto"
-            disabled={isActionDisabled}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onEditProductImageFile}
-            disabled={isActionDisabled}
-          />
+          <div className="product-edit-image-field">
+            <p className="field-label">Imagen destacada</p>
+            <label className="product-edit-image-upload">
+              <span className="product-edit-image-thumb" aria-hidden="true" />
+              <span className="product-edit-image-upload-copy">
+                <strong>Cambiar imagen</strong>
+                <small>SVG, PNG o JPG (max. 2MB)</small>
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onEditProductImageFile}
+                disabled={isActionDisabled}
+              />
+            </label>
+            <input
+              id="product-edit-image-url"
+              type="url"
+              value={draft.image}
+              onChange={(event) => onEditProductField("image", event.target.value)}
+              placeholder="O pegá una URL de imagen"
+              disabled={isActionDisabled}
+            />
+          </div>
 
-          <label className="stock-toggle">
-            <input
-              type="checkbox"
-              checked={draft.isVegan}
-              onChange={(event) => onEditProductField("isVegan", event.target.checked)}
-              disabled={isActionDisabled}
-            />
-            Producto vegano
-          </label>
-          <label className="stock-toggle">
-            <input
-              type="checkbox"
-              checked={draft.isKeto}
-              onChange={(event) => onEditProductField("isKeto", event.target.checked)}
-              disabled={isActionDisabled}
-            />
-            Producto apto keto
-          </label>
-          <label className="stock-toggle">
-            <input
-              type="checkbox"
-              checked={draft.isGlutenFree}
-              onChange={(event) => onEditProductField("isGlutenFree", event.target.checked)}
-              disabled={isActionDisabled}
-            />
-            Producto sin TACC
-          </label>
-
-          <label className="stock-toggle">
-            <input
-              type="checkbox"
-              checked={draft.outOfStock}
-              onChange={(event) => onEditProductField("outOfStock", event.target.checked)}
-              disabled={isActionDisabled}
-            />
-            Sin stock
-          </label>
+          <div className="product-edit-flags">
+            <label className="stock-toggle">
+              <input
+                type="checkbox"
+                checked={draft.isVegan}
+                onChange={(event) => onEditProductField("isVegan", event.target.checked)}
+                disabled={isActionDisabled}
+              />
+              Producto vegano
+            </label>
+            <label className="stock-toggle">
+              <input
+                type="checkbox"
+                checked={draft.outOfStock}
+                onChange={(event) => onEditProductField("outOfStock", event.target.checked)}
+                disabled={isActionDisabled}
+              />
+              Sin stock
+            </label>
+            <label className="stock-toggle">
+              <input
+                type="checkbox"
+                checked={draft.isKeto}
+                onChange={(event) => onEditProductField("isKeto", event.target.checked)}
+                disabled={isActionDisabled}
+              />
+              Producto apto keto
+            </label>
+            <label className="stock-toggle">
+              <input
+                type="checkbox"
+                checked={draft.isGlutenFree}
+                onChange={(event) => onEditProductField("isGlutenFree", event.target.checked)}
+                disabled={isActionDisabled}
+              />
+              Producto sin TACC
+            </label>
+          </div>
 
           <p className="field-label">Presentaciones y precios</p>
+          <div className="presentation-admin-heading">
+            <span>Variante (ej: 1kg)</span>
+            <span>Precio ($)</span>
+            <span />
+          </div>
           <div className="presentation-admin-list">
             {draft.presentations.map((presentation, index) => (
               <div key={`${draft.id}-${index}`} className="presentation-admin-row">
@@ -181,25 +225,25 @@ export default function ProductEditModal({
                   disabled={isActionDisabled}
                 />
                 <button
-                  className="admin-icon-button"
+                  className="admin-icon-button admin-icon-button-danger"
                   type="button"
                   onClick={() => onRemovePresentationFromDraft(index)}
                   aria-label="Quitar presentación"
                   disabled={isActionDisabled || draft.presentations.length === 1}
                 >
-                  <X aria-hidden="true" />
+                  <Trash2 aria-hidden="true" />
                 </button>
               </div>
             ))}
           </div>
 
           <button
-            className="button"
+            className="button product-edit-add-presentation"
             type="button"
             onClick={onAddPresentationToDraft}
             disabled={isActionDisabled}
           >
-            + Presentación
+            + Añadir presentación
           </button>
 
           {productAdminError && <p className="admin-error">{productAdminError}</p>}
