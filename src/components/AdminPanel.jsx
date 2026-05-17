@@ -22,6 +22,22 @@ function ProductListItem({ product, onStartEditProduct, onDeleteProduct }) {
                 </span>
               </>
             )}
+            {product.isKeto && (
+              <>
+                {" "}
+                <span className="admin-product-list-badge" aria-label="Apto keto">
+                  <img src="/images/keto-badge.svg" alt="" aria-hidden="true" />
+                </span>
+              </>
+            )}
+            {product.isGlutenFree && (
+              <>
+                {" "}
+                <span className="admin-product-list-badge" aria-label="Sin TACC">
+                  <img src="/images/gluten-free.svg" alt="" aria-hidden="true" />
+                </span>
+              </>
+            )}
             {product.outOfStock && <span className="admin-product-list-stock">Sin stock</span>}
           </span>
         </div>
@@ -83,6 +99,10 @@ export default function AdminPanel({
   onNewProductImageChange,
   newProductIsVegan,
   onNewProductIsVeganChange,
+  newProductIsKeto,
+  onNewProductIsKetoChange,
+  newProductIsGlutenFree,
+  onNewProductIsGlutenFreeChange,
   onNewProductImageFile,
   onAddProduct,
   productAdminError,
@@ -248,6 +268,22 @@ export default function AdminPanel({
               onChange={(event) => onNewProductIsVeganChange(event.target.checked)}
             />
             Producto vegano
+          </label>
+          <label className="stock-toggle">
+            <input
+              type="checkbox"
+              checked={newProductIsKeto}
+              onChange={(event) => onNewProductIsKetoChange(event.target.checked)}
+            />
+            Producto apto keto
+          </label>
+          <label className="stock-toggle">
+            <input
+              type="checkbox"
+              checked={newProductIsGlutenFree}
+              onChange={(event) => onNewProductIsGlutenFreeChange(event.target.checked)}
+            />
+            Producto sin TACC
           </label>
           <button className="button primary" type="submit">
             Agregar producto

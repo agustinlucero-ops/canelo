@@ -9,8 +9,12 @@ import { fetchCatalogFromApi } from "./api/catalog";
 import initialProducts from "./data/products.json";
 import { normalizeProductName } from "./utils/productName";
 import {
+  GLUTEN_FREE_FILTER_CATEGORY,
+  KETO_FILTER_CATEGORY,
   VEGAN_FILTER_CATEGORY,
   getProductCategoryOptions,
+  isGlutenFreeFilterCategory,
+  isKetoFilterCategory,
   isVeganFilterCategory,
   resolveProductCategoryAndVegan,
 } from "./utils/productCategories";
@@ -18,16 +22,16 @@ import {
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
-const PRODUCTS_DATA_VERSION = 8;
+const PRODUCTS_DATA_VERSION = 11;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
 const ADMIN_USER = "dieteticacanelo@gmail.com";
 const ADMIN_PASSWORD = "TagaBodoque";
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 
 const DEFAULT_CATEGORIES = [
-  "Sin tacc",
+  GLUTEN_FREE_FILTER_CATEGORY,
   "Granolas",
-  "Apto keto",
+  KETO_FILTER_CATEGORY,
   "Cereales",
   "Condimentos",
   "Congelados",
@@ -75,7 +79,10 @@ const sanitizeProducts = (productList) => {
       const id = String(product?.id ?? "").trim() || `producto-${index + 1}`;
       const normalizedCategory =
         normalizeCategoryLabel(String(product?.category ?? "").trim()) || "Sin tacc";
-      const { category, isVegan } = resolveProductCategoryAndVegan(product, normalizedCategory);
+      const { category, isVegan, isKeto, isGlutenFree } = resolveProductCategoryAndVegan(
+        product,
+        normalizedCategory
+      );
       const name = normalizeProductName(String(product?.name ?? "").trim(), category);
       const image = String(product?.image ?? "").trim() || DEFAULT_PRODUCT_IMAGE;
       const presentations = sanitizePresentations(product?.presentations);
@@ -89,6 +96,8 @@ const sanitizeProducts = (productList) => {
         image,
         presentations,
         isVegan,
+        isKeto,
+        isGlutenFree,
         outOfStock: Boolean(product?.outOfStock),
       };
     })
@@ -150,6 +159,8 @@ export default function App() {
   const [newProductPresentation, setNewProductPresentation] = useState("1kg");
   const [newProductPrice, setNewProductPrice] = useState("");
   const [newProductIsVegan, setNewProductIsVegan] = useState(false);
+  const [newProductIsKeto, setNewProductIsKeto] = useState(false);
+  const [newProductIsGlutenFree, setNewProductIsGlutenFree] = useState(false);
   const [newProductImage, setNewProductImage] = useState("");
   const [productAdminError, setProductAdminError] = useState("");
   const [editingProductId, setEditingProductId] = useState(null);
@@ -169,9 +180,15 @@ export default function App() {
         const sanitizedProducts = sanitizeProducts(apiProducts);
         if (!sanitizedProducts.length) return;
 
-        setProducts(sanitizedProducts);
+        setProducts((currentProducts) => {
+          const mergedProducts = new Map(currentProducts.map((product) => [product.id, product]));
+          sanitizedProducts.forEach((product) => {
+            mergedProducts.set(product.id, product);
+          });
+          return Array.from(mergedProducts.values());
+        });
         if (apiCategories.length) {
-          setCategories(apiCategories);
+          setCategories((currentCategories) => [...new Set([...currentCategories, ...apiCategories])]);
         }
       } catch {
         // Mantiene catálogo de localStorage / products.json
@@ -233,6 +250,12 @@ export default function App() {
     if (selectedCategory === "Todas") return products;
     if (isVeganFilterCategory(selectedCategory)) {
       return products.filter((product) => product.isVegan);
+    }
+    if (isGlutenFreeFilterCategory(selectedCategory)) {
+      return products.filter((product) => product.isGlutenFree);
+    }
+    if (isKetoFilterCategory(selectedCategory)) {
+      return products.filter((product) => product.isKeto);
     }
     return products.filter((product) => product.category === selectedCategory);
   }, [products, selectedCategory]);
@@ -316,6 +339,12 @@ export default function App() {
       acc[normalizedCategory] = (acc[normalizedCategory] ?? 0) + 1;
       if (product.isVegan) {
         acc[VEGAN_FILTER_CATEGORY] = (acc[VEGAN_FILTER_CATEGORY] ?? 0) + 1;
+      }
+      if (product.isKeto) {
+        acc[KETO_FILTER_CATEGORY] = (acc[KETO_FILTER_CATEGORY] ?? 0) + 1;
+      }
+      if (product.isGlutenFree && !isGlutenFreeFilterCategory(normalizedCategory)) {
+        acc[GLUTEN_FREE_FILTER_CATEGORY] = (acc[GLUTEN_FREE_FILTER_CATEGORY] ?? 0) + 1;
       }
       return acc;
     }, {});
@@ -431,9 +460,9 @@ export default function App() {
       return;
     }
 
-    if (isVeganFilterCategory(normalizedCategory)) {
+    if (isVeganFilterCategory(normalizedCategory) || isKetoFilterCategory(normalizedCategory)) {
       setProductAdminError(
-        'Elegí el tipo de producto, no "Veganos". Marcá "Producto vegano" si corresponde.'
+        'Elegí el tipo de producto, no "Veganos/Keto". Marcá los checks de producto si corresponde.'
       );
       return;
     }
@@ -466,6 +495,9 @@ export default function App() {
       category: normalizedCategory,
       image: newProductImage.trim() || DEFAULT_PRODUCT_IMAGE,
       isVegan: newProductIsVegan,
+      isKeto: newProductIsKeto,
+      isGlutenFree:
+        newProductIsGlutenFree || isGlutenFreeFilterCategory(normalizedCategory),
       outOfStock: false,
       presentations: [
         {
@@ -480,6 +512,8 @@ export default function App() {
     setNewProductName("");
     setNewProductCategory("Sin tacc");
     setNewProductIsVegan(false);
+    setNewProductIsKeto(false);
+    setNewProductIsGlutenFree(false);
     setNewProductPresentation("1kg");
     setNewProductPrice("");
     setNewProductImage("");
@@ -514,6 +548,8 @@ export default function App() {
       category: product.category,
       image: product.image,
       isVegan: Boolean(product.isVegan),
+      isKeto: Boolean(product.isKeto),
+      isGlutenFree: Boolean(product.isGlutenFree),
       outOfStock: Boolean(product.outOfStock),
       presentations: product.presentations.map((presentation) => ({
         label: presentation.label,
@@ -619,9 +655,9 @@ export default function App() {
       return;
     }
 
-    if (isVeganFilterCategory(normalizedCategory)) {
+    if (isVeganFilterCategory(normalizedCategory) || isKetoFilterCategory(normalizedCategory)) {
       setProductAdminError(
-        'Elegí el tipo de producto, no "Veganos". Marcá "Producto vegano" si corresponde.'
+        'Elegí el tipo de producto, no "Veganos/Keto". Marcá los checks de producto si corresponde.'
       );
       return;
     }
@@ -645,6 +681,10 @@ export default function App() {
       category: normalizedCategory,
       image: editingProductDraft.image.trim() || DEFAULT_PRODUCT_IMAGE,
       isVegan: Boolean(editingProductDraft.isVegan),
+      isKeto: Boolean(editingProductDraft.isKeto),
+      isGlutenFree:
+        Boolean(editingProductDraft.isGlutenFree) ||
+        isGlutenFreeFilterCategory(normalizedCategory),
       outOfStock: Boolean(editingProductDraft.outOfStock),
       presentations: sanitizedPresentations.map((presentation) => ({
         label: presentation.label,
@@ -705,6 +745,8 @@ export default function App() {
     setNewProductName("");
     setNewProductCategory("Sin tacc");
     setNewProductIsVegan(false);
+    setNewProductIsKeto(false);
+    setNewProductIsGlutenFree(false);
     setNewProductPresentation("1kg");
     setNewProductPrice("");
     setNewProductImage("");
@@ -747,10 +789,7 @@ export default function App() {
     <div className="app-container">
       <header className="site-header">
         <h1 className="site-brand">
-          <picture>
-            <source srcSet="/images/logo.webp" type="image/webp" />
-            <img className="site-brand-logo" src="/images/logo.jpeg" alt="Canelo" />
-          </picture>
+          <img className="site-brand-logo" src="/images/Logo CANELO.svg" alt="Canelo" />
         </h1>
 
         {isAdmin && (
@@ -776,21 +815,6 @@ export default function App() {
           </nav>
         )}
 
-        <div className="header-actions">
-          <button
-            className="header-icon-button cart-icon-button"
-            type="button"
-            onClick={() => setCartOpen(true)}
-            aria-label={`Abrir carrito, ${totals.totalItems} productos`}
-          >
-            <ShoppingCart aria-hidden="true" />
-            {totals.totalItems > 0 && (
-              <span className="cart-badge" aria-hidden="true">
-                {totals.totalItems}
-              </span>
-            )}
-          </button>
-        </div>
       </header>
 
       <main>
@@ -925,6 +949,10 @@ export default function App() {
             onNewProductImageChange={setNewProductImage}
             newProductIsVegan={newProductIsVegan}
             onNewProductIsVeganChange={setNewProductIsVegan}
+            newProductIsKeto={newProductIsKeto}
+            onNewProductIsKetoChange={setNewProductIsKeto}
+            newProductIsGlutenFree={newProductIsGlutenFree}
+            onNewProductIsGlutenFreeChange={setNewProductIsGlutenFree}
             onNewProductImageFile={handleNewProductImageFile}
             onAddProduct={handleAddProduct}
             productAdminError={productAdminError}
@@ -944,6 +972,20 @@ export default function App() {
           />
         )}
       </main>
+
+      <button
+        className="header-icon-button cart-icon-button floating-cart-button"
+        type="button"
+        onClick={() => setCartOpen(true)}
+        aria-label={`Abrir carrito, ${totals.totalItems} productos`}
+      >
+        <ShoppingCart aria-hidden="true" />
+        {totals.totalItems > 0 && (
+          <span className="cart-badge" aria-hidden="true">
+            {totals.totalItems}
+          </span>
+        )}
+      </button>
 
       <CartDrawer
         isOpen={isCartOpen}

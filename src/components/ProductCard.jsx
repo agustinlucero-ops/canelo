@@ -46,6 +46,16 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
               <Vegan aria-hidden="true" />
             </span>
           )}
+          {product.isKeto && (
+            <span className="keto-badge" aria-label="Producto apto keto">
+              <img src="/images/keto-badge.svg" alt="" aria-hidden="true" />
+            </span>
+          )}
+          {product.isGlutenFree && (
+            <span className="gluten-free-badge" aria-label="Producto sin TACC">
+              <img src="/images/gluten-free.svg" alt="" aria-hidden="true" />
+            </span>
+          )}
           {product.outOfStock && <span className="stock-badge">Sin stock</span>}
         </div>
         <h3>{displayName}</h3>

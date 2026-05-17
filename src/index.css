@@ -48,25 +48,12 @@ p {
   flex-shrink: 0;
 }
 
-.site-brand picture {
-  display: block;
-  height: 100%;
-  width: 100%;
-}
-
 .site-brand-logo {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center 44%;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.45rem;
-  align-items: center;
-  flex-shrink: 0;
 }
 
 .header-icon-button {
@@ -112,6 +99,16 @@ p {
 .cart-icon-button:hover {
   background: #14532d;
   border-color: #14532d;
+}
+
+.floating-cart-button {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 19;
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 12px 28px rgba(10, 40, 20, 0.34);
 }
 
 .cart-badge {
@@ -359,6 +356,12 @@ p {
 .admin-product-list-badge svg {
   width: 0.8rem;
   height: 0.8rem;
+}
+
+.admin-product-list-badge img {
+  width: 0.8rem;
+  height: 0.8rem;
+  object-fit: contain;
 }
 
 .admin-product-list-stock {
@@ -817,6 +820,47 @@ p {
   height: 0.9rem;
 }
 
+.keto-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 1.7rem;
+  background: #fff8eb;
+  border: 1px solid #efcd93;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+}
+
+.keto-badge img {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: cover;
+  object-position: center;
+}
+
+.gluten-free-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 1.7rem;
+  background: #eefbf0;
+  border: 1px solid #bde7c4;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+}
+
+.gluten-free-badge img {
+  width: 1.65rem;
+  height: 1.65rem;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  transform: translateX(-8%) scale(1.45);
+  transform-origin: center center;
+}
+
 .category-section h2 {
   margin-bottom: 0.8rem;
 }
@@ -1131,6 +1175,11 @@ input[type="number"] {
 }
 
 @media (max-width: 700px) {
+  .floating-cart-button {
+    right: 0.85rem;
+    bottom: 0.85rem;
+  }
+
   .site-header {
     flex-wrap: wrap;
   }

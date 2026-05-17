@@ -242,7 +242,8 @@
   {
     "id": "semillas-psyllium",
     "name": "Psyllium",
-    "category": "Apto keto",
+    "category": "Harinas y legumbres",
+    "isKeto": true,
     "image": "/images/products/chia.svg",
     "presentations": [
       { "label": "100g", "price": 3500 },
@@ -327,7 +328,8 @@
   {
     "id": "harina-coco",
     "name": "Harina de coco",
-    "category": "Apto keto",
+    "category": "Harinas y legumbres",
+    "isKeto": true,
     "image": "/images/products/harina-almendra.svg",
     "presentations": [
       { "label": "500g", "price": 5100 },

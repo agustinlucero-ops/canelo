@@ -17,6 +17,8 @@ function draftToPreviewProduct(draft) {
     category: draft.category,
     image: draft.image.trim() || "/images/products/almendra.svg",
     isVegan: Boolean(draft.isVegan),
+    isKeto: Boolean(draft.isKeto),
+    isGlutenFree: Boolean(draft.isGlutenFree),
     outOfStock: Boolean(draft.outOfStock),
     presentations: presentations.length ? presentations : [{ label: "—", price: 1 }],
   };
@@ -101,6 +103,22 @@ export default function ProductEditModal({
               onChange={(event) => onEditProductField("isVegan", event.target.checked)}
             />
             Producto vegano
+          </label>
+          <label className="stock-toggle">
+            <input
+              type="checkbox"
+              checked={draft.isKeto}
+              onChange={(event) => onEditProductField("isKeto", event.target.checked)}
+            />
+            Producto apto keto
+          </label>
+          <label className="stock-toggle">
+            <input
+              type="checkbox"
+              checked={draft.isGlutenFree}
+              onChange={(event) => onEditProductField("isGlutenFree", event.target.checked)}
+            />
+            Producto sin TACC
           </label>
 
           <label className="stock-toggle">
