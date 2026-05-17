@@ -14,6 +14,7 @@ import {
   updateProduct,
 } from "./catalog.mjs";
 import { getSql } from "./db.mjs";
+import { OrderError, createOrder, listOrders } from "./orders.mjs";
 import {
   createAdminToken,
   extractBearerToken,
@@ -29,6 +30,21 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 function sendApiError(res, err, defaultCode = "internal_error", defaultMessage = "Error interno") {
+  if (err instanceof OrderError) {
+    const statusByCode = {
+      invalid_order_items: 400,
+      invalid_order_item: 400,
+    };
+    res.status(statusByCode[err.code] ?? 400).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details,
+      },
+    });
+    return;
+  }
+
   if (err instanceof CatalogError) {
     const statusByCode = {
       invalid_category_name: 400,
@@ -247,6 +263,31 @@ app.delete("/api/products/:id", requireAdminAuth, async (req, res) => {
   } catch (err) {
     console.error("[api/products#delete]", { ...actionMeta, result: "error", err });
     sendApiError(res, err, "db_error", "No se pudo eliminar el producto.");
+  }
+});
+
+app.post("/api/orders", async (req, res) => {
+  try {
+    const order = await createOrder({
+      customerName: req.body?.customerName,
+      customerPhone: req.body?.customerPhone,
+      items: req.body?.items,
+    });
+    res.status(201).json({ order });
+  } catch (err) {
+    console.error("[api/orders#create]", err);
+    sendApiError(res, err, "order_create_failed", "No se pudo registrar el pedido.");
+  }
+});
+
+app.get("/api/orders", requireAdminAuth, async (req, res) => {
+  try {
+    const limit = typeof req.query.limit === "string" ? Number(req.query.limit) : 50;
+    const orders = await listOrders({ limit });
+    res.json({ orders });
+  } catch (err) {
+    console.error("[api/orders#list]", err);
+    sendApiError(res, err, "order_list_failed", "No se pudieron cargar los pedidos.");
   }
 });
 

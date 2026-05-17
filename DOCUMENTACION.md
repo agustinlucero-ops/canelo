@@ -588,11 +588,11 @@ VITE_ENABLE_REMOTE_ADMIN_WRITES=true
 | Escritura del catálogo | Protegida con token Bearer tras login | Roles múltiples / OAuth en el futuro |
 | Credenciales admin | Variables `ADMIN_*` en servidor | Rotar clave periódicamente; no usar `VITE_` para secretos |
 | WhatsApp | Configurable por env; placeholder si falta | Definir número real en `.env` de producción |
-| Pedidos | Solo mensaje WA, sin registro | Opcional: guardar pedidos en DB o Google Sheets |
+| Pedidos | Registro en Neon al enviar por WhatsApp + listado admin | Exportar pedidos / notificaciones |
 | Imágenes admin en base64 | Pesado en DB; subida desde panel admin | Storage externo (S3, Cloudinary) en hito futuro |
 | Catálogo en cliente | Fuente oficial: API Neon cuando responde | Sin persistir `canelo.products` / `canelo.categories` si la API está activa (`PRODUCTS_DATA_VERSION` 12) |
-| Tests | No hay suite automatizada | Tests unitarios de sanitize, carrito y API |
-| PWA | Sin manifest | Opcional si se publica como app instalable |
+| Tests | Vitest + smoke API en CI | E2E con Playwright |
+| PWA | `manifest.webmanifest` básico | Service worker / offline |
 | Footer / contacto | Pendiente de contenido | Horarios, dirección y redes en hito futuro |
 | Parse PDF | Script `catalog:parse-pdf` disponible | Integrar flujo de importación al admin o seed |
 

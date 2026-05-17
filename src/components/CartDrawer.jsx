@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { createOrder } from "../api/orders";
 import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
 
 const STORE_NAME = "Dietetica Canelo";
@@ -39,6 +40,14 @@ export default function CartDrawer({
       event.preventDefault();
       return;
     }
+
+    void createOrder({
+      customerName,
+      customerPhone,
+      items,
+    }).catch((err) => {
+      console.warn("[orders] No se pudo registrar el pedido:", err);
+    });
 
     clearCart();
     setCustomerName("");

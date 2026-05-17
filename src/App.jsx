@@ -25,7 +25,6 @@ import {
   updateProduct as updateProductApi,
 } from "./api/adminCatalog";
 import initialProducts from "./data/products.json";
-import { normalizeProductName } from "./utils/productName";
 import {
   GLUTEN_FREE_FILTER_CATEGORY,
   KETO_FILTER_CATEGORY,
@@ -34,15 +33,14 @@ import {
   isGlutenFreeFilterCategory,
   isKetoFilterCategory,
   isVeganFilterCategory,
-  resolveProductCategoryAndVegan,
 } from "./utils/productCategories";
+import { sanitizeProducts } from "./utils/sanitizeCatalog";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
 const PRODUCTS_DATA_VERSION = 12;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
-const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 const ENABLE_REMOTE_ADMIN_WRITES = import.meta.env.VITE_ENABLE_REMOTE_ADMIN_WRITES !== "false";
 
 const DEFAULT_CATEGORIES = [
@@ -78,55 +76,6 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const sanitizePresentations = (presentations) => {
-  if (!Array.isArray(presentations)) return [];
-
-  return presentations
-    .map((presentation) => {
-      const label = String(presentation?.label ?? "").trim();
-      const price = Number(presentation?.price);
-      if (!label || Number.isNaN(price) || price <= 0) return null;
-      return {
-        label,
-        price: Math.round(price),
-      };
-    })
-    .filter(Boolean);
-};
-
-const sanitizeProducts = (productList) => {
-  if (!Array.isArray(productList)) return [];
-
-  return productList
-    .map((product, index) => {
-      const id = String(product?.id ?? "").trim() || `producto-${index + 1}`;
-      const normalizedCategory =
-        normalizeCategoryLabel(String(product?.category ?? "").trim()) || "Sin tacc";
-      const { category, isVegan, isKeto, isGlutenFree } = resolveProductCategoryAndVegan(
-        product,
-        normalizedCategory
-      );
-      const name = normalizeProductName(String(product?.name ?? "").trim(), category);
-      const image = String(product?.image ?? "").trim() || DEFAULT_PRODUCT_IMAGE;
-      const presentations = sanitizePresentations(product?.presentations);
-      if (!name || !presentations.length) return null;
-
-      return {
-        ...product,
-        id,
-        name,
-        category,
-        image,
-        presentations,
-        isVegan,
-        isKeto,
-        isGlutenFree,
-        outOfStock: Boolean(product?.outOfStock),
-      };
-    })
-    .filter(Boolean);
-};
-
 function loadStoredData(storageKey, fallback) {
   if (typeof window === "undefined") return fallback;
   const storedValue = window.localStorage.getItem(storageKey);
@@ -143,7 +92,9 @@ export default function App() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCartBadgeBumping, setIsCartBadgeBumping] = useState(false);
   const prevTotalItemsRef = useRef(0);
-  const { items, totals, addItem, setQuantity, removeItem, clearCart } = useCart();
+  const { items, totals, addItem, setQuantity, removeItem, clearCart, reconcileWithCatalog } =
+    useCart();
+  const [cartReconcileNotice, setCartReconcileNotice] = useState("");
 
   useEffect(() => {
     if (totals.totalItems > prevTotalItemsRef.current) {
@@ -339,6 +290,25 @@ export default function App() {
       setCategorySearch("");
     }
   }, [allCategories, selectedCategory]);
+
+  useEffect(() => {
+    if (!items.length) {
+      setCartReconcileNotice("");
+      return;
+    }
+
+    const { removedCount } = reconcileWithCatalog(products);
+    if (removedCount > 0) {
+      setCartReconcileNotice(
+        removedCount === 1
+          ? "Quitamos 1 producto del carrito porque ya no está disponible."
+          : `Quitamos ${removedCount} productos del carrito porque ya no están disponibles.`
+      );
+      return;
+    }
+
+    setCartReconcileNotice("");
+  }, [products, reconcileWithCatalog]);
 
   const visibleProducts = useMemo(() => {
     if (selectedProductId) {
@@ -1145,6 +1115,12 @@ export default function App() {
               <p className="catalog-refreshing-banner" role="status" aria-live="polite">
                 Actualizando catálogo…
               </p>
+            )}
+
+            {cartReconcileNotice && (
+              <div className="cart-reconcile-banner" role="status" aria-live="polite">
+                {cartReconcileNotice}
+              </div>
             )}
 
             <section className="category-admin-section">

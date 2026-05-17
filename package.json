@@ -13,7 +13,10 @@
     "db:migrate": "node scripts/run-migration.mjs",
     "db:seed": "node scripts/seed-catalog.mjs",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "catalog:parse-pdf": "node scripts/parse-catalog-pdf.mjs"
+    "catalog:parse-pdf": "node scripts/parse-catalog-pdf.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:api": "node --test server/**/*.test.mjs"
   },
   "keywords": [
     "dietetica",
@@ -35,6 +38,8 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
-    "vite": "^8.0.10"
+    "pdf-parse": "^1.1.1",
+    "vite": "^8.0.10",
+    "vitest": "^3.2.4"
   }
 }

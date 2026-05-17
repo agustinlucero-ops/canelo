@@ -1,0 +1,24 @@
+{
+  "name": "Dietética Canelo",
+  "short_name": "Canelo",
+  "description": "Catálogo online de Dietética Canelo. Pedí por WhatsApp.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#166534",
+  "lang": "es-AR",
+  "icons": [
+    {
+      "src": "/images/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

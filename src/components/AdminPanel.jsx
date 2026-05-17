@@ -1,6 +1,9 @@
 import { Check, ChevronDown, Pencil, Trash2, Vegan, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { fetchOrders } from "../api/orders";
 import CollapsibleSection from "./CollapsibleSection";
 import ProductEditModal from "./ProductEditModal";
+import { formatPrice } from "../utils/whatsapp";
 
 function formatPresentationsSummary(presentations) {
   return presentations.map((p) => `${p.label}: $${p.price}`).join(" · ");
@@ -128,6 +131,36 @@ export default function AdminPanel({
   const isMutating = Boolean(adminPendingAction);
   const isReadOnly = !isCatalogApiAvailable;
   const isActionDisabled = isMutating || isReadOnly;
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
+
+  useEffect(() => {
+    if (!isOrdersOpen) return undefined;
+
+    let cancelled = false;
+    setOrdersLoading(true);
+    setOrdersError("");
+
+    fetchOrders()
+      .then((data) => {
+        if (!cancelled) setOrders(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setOrdersError(err?.message || "No se pudieron cargar los pedidos.");
+          setOrders([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setOrdersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOrdersOpen]);
 
   return (
     <section className="admin-section">
@@ -143,6 +176,47 @@ export default function AdminPanel({
         </p>
       )}
       {isMutating && <p className="field-label">Guardando cambios...</p>}
+
+      <CollapsibleSection
+        title="Pedidos recientes"
+        isOpen={isOrdersOpen}
+        onToggle={() => setIsOrdersOpen((value) => !value)}
+      >
+        {ordersLoading && <p className="field-label">Cargando pedidos…</p>}
+        {ordersError && <p className="admin-error">{ordersError}</p>}
+        {!ordersLoading && !ordersError && orders.length === 0 && (
+          <p className="field-label">Todavía no hay pedidos registrados.</p>
+        )}
+        {!ordersLoading && orders.length > 0 && (
+          <ul className="admin-orders-list">
+            {orders.map((order) => (
+              <li key={order.id} className="admin-order-item">
+                <div className="admin-order-header">
+                  <strong>{formatPrice(order.total)}</strong>
+                  <span>
+                    {new Date(order.createdAt).toLocaleString("es-AR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </div>
+                <p className="admin-order-meta">
+                  {order.customerName || "Sin nombre"}
+                  {order.customerPhone ? ` · ${order.customerPhone}` : ""}
+                </p>
+                <ul className="admin-order-lines">
+                  {order.items.map((item, index) => (
+                    <li key={`${order.id}-${index}`}>
+                      {item.quantity}x {item.productName} ({item.presentationLabel}) —{" "}
+                      {formatPrice(item.unitPrice * item.quantity)}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleSection>
 
       <CollapsibleSection
         title="Categorías"

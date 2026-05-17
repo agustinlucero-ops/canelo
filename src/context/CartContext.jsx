@@ -1,87 +1,39 @@
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { createContext, useCallback, useContext, useMemo, useReducer } from "react";
+import { cartInitialState, cartReducer, computeCartTotals } from "./cartReducer";
+import { reconcileCartItems } from "../utils/reconcileCart";
 
 const CartContext = createContext(null);
 
-const initialState = {
-  items: [],
-};
-
-function cartReducer(state, action) {
-  switch (action.type) {
-    case "ADD_ITEM": {
-      const { product, presentation } = action.payload;
-      const key = `${product.id}-${presentation.label}`;
-      const existing = state.items.find((item) => item.key === key);
-
-      if (existing) {
-        return {
-          ...state,
-          items: state.items.map((item) =>
-            item.key === key ? { ...item, quantity: item.quantity + 1 } : item
-          ),
-        };
-      }
-
-      return {
-        ...state,
-        items: [
-          ...state.items,
-          {
-            key,
-            productId: product.id,
-            name: product.name,
-            image: product.image,
-            presentation: presentation.label,
-            unitPrice: presentation.price,
-            quantity: 1,
-          },
-        ],
-      };
-    }
-    case "SET_QUANTITY": {
-      const { key, quantity } = action.payload;
-
-      if (quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter((item) => item.key !== key),
-        };
-      }
-
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.key === key ? { ...item, quantity } : item
-        ),
-      };
-    }
-    case "REMOVE_ITEM":
-      return {
-        ...state,
-        items: state.items.filter((item) => item.key !== action.payload.key),
-      };
-    case "CLEAR_CART":
-      return initialState;
-    default:
-      return state;
-  }
-}
-
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [state, dispatch] = useReducer(cartReducer, cartInitialState);
 
-  const totals = useMemo(() => {
-    const subtotal = state.items.reduce(
-      (acc, item) => acc + item.unitPrice * item.quantity,
-      0
-    );
+  const totals = useMemo(() => computeCartTotals(state.items), [state.items]);
 
-    return {
-      subtotal,
-      total: subtotal,
-      totalItems: state.items.reduce((acc, item) => acc + item.quantity, 0),
-    };
-  }, [state.items]);
+  const reconcileWithCatalog = useCallback(
+    (products) => {
+      const { items, removedCount } = reconcileCartItems(state.items, products);
+      const isSame =
+        items.length === state.items.length &&
+        items.every((item, index) => {
+          const current = state.items[index];
+          return (
+            item.key === current.key &&
+            item.name === current.name &&
+            item.unitPrice === current.unitPrice &&
+            item.image === current.image &&
+            item.quantity === current.quantity &&
+            item.presentation === current.presentation
+          );
+        });
+
+      if (!isSame) {
+        dispatch({ type: "RECONCILE_WITH_CATALOG", payload: { items } });
+      }
+
+      return { removedCount };
+    },
+    [state.items]
+  );
 
   const value = useMemo(
     () => ({
@@ -93,8 +45,9 @@ export function CartProvider({ children }) {
         dispatch({ type: "SET_QUANTITY", payload: { key, quantity } }),
       removeItem: (key) => dispatch({ type: "REMOVE_ITEM", payload: { key } }),
       clearCart: () => dispatch({ type: "CLEAR_CART" }),
+      reconcileWithCatalog,
     }),
-    [state.items, totals]
+    [state.items, totals, reconcileWithCatalog]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

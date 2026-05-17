@@ -689,6 +689,52 @@ p {
   color: #065f46;
 }
 
+.cart-reconcile-banner {
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.admin-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-order-item {
+  border: 1px solid #dce5dc;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+}
+
+.admin-order-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.admin-order-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.admin-order-lines {
+  margin: 0.45rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.84rem;
+  color: #374151;
+}
+
 .catalog-status-region {
   display: grid;
   gap: 1rem;

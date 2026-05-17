@@ -6,3 +6,5 @@ dist/
 .env.local
 .env.*.local
 !.env.example
+docs/*.pdf
+scripts/catalog-diff-report.json
