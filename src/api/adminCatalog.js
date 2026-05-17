@@ -1,5 +1,16 @@
+import { clearAdminToken, getAdminToken } from "./adminAuth";
+
 const DEFAULT_TIMEOUT_MS = 12000;
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+
+function buildAdminHeaders(extraHeaders = {}) {
+  const token = getAdminToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extraHeaders,
+  };
+}
 
 function toApiError(fallbackCode, fallbackMessage, status, payload) {
   const apiError = payload?.error;
@@ -17,10 +28,7 @@ async function fetchWithTimeout(url, options = {}) {
     return await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
+      headers: buildAdminHeaders(options.headers),
     });
   } finally {
     window.clearTimeout(timeoutId);
@@ -41,6 +49,9 @@ async function requestJson(url, { method = "GET", body, fallbackCode, fallbackMe
       const payload = isJson ? await response.json() : null;
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAdminToken();
+        }
         if (attempts < 2 && RETRYABLE_STATUS.has(response.status)) {
           continue;
         }

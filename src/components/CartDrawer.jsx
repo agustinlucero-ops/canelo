@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
 
@@ -5,7 +6,15 @@ const STORE_NAME = "Dietetica Canelo";
 const WHATSAPP_PHONE =
   import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") || "5491122334455";
 
-export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity, removeItem }) {
+export default function CartDrawer({
+  isOpen,
+  onClose,
+  items,
+  totals,
+  setQuantity,
+  removeItem,
+  clearCart,
+}) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
@@ -25,6 +34,18 @@ export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity
     return buildWhatsAppLink({ phoneNumber: WHATSAPP_PHONE, message });
   }, [customerName, customerPhone, items, totals]);
 
+  const handleWhatsAppCheckout = (event) => {
+    if (!items.length || !checkoutLink) {
+      event.preventDefault();
+      return;
+    }
+
+    clearCart();
+    setCustomerName("");
+    setCustomerPhone("");
+    onClose();
+  };
+
   return (
     <>
       {isOpen && <button aria-label="Cerrar carrito" className="overlay" onClick={onClose} />}
@@ -32,7 +53,7 @@ export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity
         <header className="cart-header">
           <h2>Tu carrito</h2>
           <button className="icon-button" onClick={onClose} aria-label="Cerrar">
-            x
+            <X aria-hidden="true" />
           </button>
         </header>
 
@@ -121,11 +142,7 @@ export default function CartDrawer({ isOpen, onClose, items, totals, setQuantity
                 target="_blank"
                 rel="noreferrer"
                 className={`button whatsapp ${items.length ? "" : "disabled"}`.trim()}
-                onClick={(event) => {
-                  if (!items.length) {
-                    event.preventDefault();
-                  }
-                }}
+                onClick={handleWhatsAppCheckout}
               >
                 Enviar pedido por WhatsApp
               </a>

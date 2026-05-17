@@ -7,6 +7,16 @@ import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import { fetchCatalogFromApi } from "./api/catalog";
 import {
+  clearCatalogLocalStorage,
+  mergeOrderedCategories,
+} from "./utils/catalogCategories";
+import {
+  clearAdminToken,
+  loginAdmin,
+  setAdminToken,
+  verifyAdminSession,
+} from "./api/adminAuth";
+import {
   createCategory as createCategoryApi,
   createProduct as createProductApi,
   deleteCategory as deleteCategoryApi,
@@ -30,10 +40,8 @@ import {
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
-const PRODUCTS_DATA_VERSION = 11;
+const PRODUCTS_DATA_VERSION = 12;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
-const ADMIN_USER = "dieteticacanelo@gmail.com";
-const ADMIN_PASSWORD = "TagaBodoque";
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 const ENABLE_REMOTE_ADMIN_WRITES = import.meta.env.VITE_ENABLE_REMOTE_ADMIN_WRITES !== "false";
 
@@ -135,7 +143,7 @@ export default function App() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCartBadgeBumping, setIsCartBadgeBumping] = useState(false);
   const prevTotalItemsRef = useRef(0);
-  const { items, totals, addItem, setQuantity, removeItem } = useCart();
+  const { items, totals, addItem, setQuantity, removeItem, clearCart } = useCart();
 
   useEffect(() => {
     if (totals.totalItems > prevTotalItemsRef.current) {
@@ -150,34 +158,20 @@ export default function App() {
     }
     prevTotalItemsRef.current = totals.totalItems;
   }, [totals.totalItems]);
-  const [products, setProducts] = useState(() => {
-    const fallbackProducts = sanitizeProducts(initialProducts);
-    const storedVersion = loadStoredData(PRODUCTS_VERSION_STORAGE_KEY, 0);
-    if (storedVersion !== PRODUCTS_DATA_VERSION) {
-      return fallbackProducts;
-    }
-    const storedProducts = loadStoredData(PRODUCTS_STORAGE_KEY, fallbackProducts);
-    const sanitizedStoredProducts = sanitizeProducts(storedProducts);
-    return sanitizedStoredProducts.length ? sanitizedStoredProducts : fallbackProducts;
-  });
-  const [categories, setCategories] = useState(() => {
-    const storedCategories = loadStoredData(CATEGORIES_STORAGE_KEY, DEFAULT_CATEGORIES);
-    if (!Array.isArray(storedCategories) || !storedCategories.length) {
-      return DEFAULT_CATEGORIES;
-    }
-
-    return [...new Set(storedCategories.map((category) => normalizeCategoryLabel(category)).filter(Boolean))];
-  });
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [newCategory, setNewCategory] = useState("");
   const [categoryAdminError, setCategoryAdminError] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingCategoryValue, setEditingCategoryValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todas");
   const [categorySearch, setCategorySearch] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [isCategorySuggestionsOpen, setIsCategorySuggestionsOpen] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [adminUserInput, setAdminUserInput] = useState("");
   const [adminError, setAdminError] = useState("");
+  const [isAdminLoginPending, setIsAdminLoginPending] = useState(false);
   const [isAdmin, setIsAdmin] = useState(() =>
     loadStoredData(ADMIN_SESSION_STORAGE_KEY, false)
   );
@@ -197,40 +191,74 @@ export default function App() {
   const [productAdminError, setProductAdminError] = useState("");
   const [adminPendingAction, setAdminPendingAction] = useState("");
   const [isCatalogApiAvailable, setIsCatalogApiAvailable] = useState(false);
+  const [catalogLoadStatus, setCatalogLoadStatus] = useState("loading");
+  const [isCatalogRefreshing, setIsCatalogRefreshing] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [editingProductDraft, setEditingProductDraft] = useState(null);
 
   const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
   useBodyScrollLock(isCartOpen || isAdminModalOpen || isProductEditModalOpen);
 
+  const applyOfflineCatalog = useCallback(() => {
+    const fallbackProducts = sanitizeProducts(initialProducts);
+    setProducts(fallbackProducts);
+    setCategories(
+      mergeOrderedCategories([], fallbackProducts, DEFAULT_CATEGORIES)
+    );
+    return fallbackProducts.length > 0;
+  }, []);
+
   const mergeApiCatalogInState = useCallback(({ categories: apiCategories, products: apiProducts }) => {
     const sanitizedProducts = sanitizeProducts(apiProducts);
     setProducts(sanitizedProducts);
-    if (apiCategories.length) {
-      setCategories((currentCategories) => [...new Set([...currentCategories, ...apiCategories])]);
-    }
+    setCategories(mergeOrderedCategories(apiCategories, sanitizedProducts, DEFAULT_CATEGORIES));
     return sanitizedProducts.length > 0 || apiCategories.length > 0;
   }, []);
 
-  const refreshCatalogFromApi = useCallback(async () => {
-    try {
-      const apiCatalog = await fetchCatalogFromApi();
-      const hasData = mergeApiCatalogInState(apiCatalog);
-      setIsCatalogApiAvailable(true);
-      return hasData;
-    } catch {
-      setIsCatalogApiAvailable(false);
-      return false;
+  const refreshCatalogFromApi = useCallback(
+    async ({ showRefreshing = false } = {}) => {
+      if (showRefreshing) {
+        setIsCatalogRefreshing(true);
+      }
+
+      try {
+        const apiCatalog = await fetchCatalogFromApi();
+        const hasData = mergeApiCatalogInState(apiCatalog);
+        setIsCatalogApiAvailable(true);
+        setCatalogLoadStatus("ready");
+        clearCatalogLocalStorage();
+        window.localStorage.setItem(
+          PRODUCTS_VERSION_STORAGE_KEY,
+          JSON.stringify(PRODUCTS_DATA_VERSION)
+        );
+        return hasData;
+      } catch {
+        setIsCatalogApiAvailable(false);
+        setCatalogLoadStatus("offline");
+        const hasData = applyOfflineCatalog();
+        return hasData;
+      } finally {
+        if (showRefreshing) {
+          setIsCatalogRefreshing(false);
+        }
+      }
+    },
+    [applyOfflineCatalog, mergeApiCatalogInState]
+  );
+
+  useEffect(() => {
+    const storedVersion = loadStoredData(PRODUCTS_VERSION_STORAGE_KEY, 0);
+    if (storedVersion !== PRODUCTS_DATA_VERSION) {
+      clearCatalogLocalStorage();
     }
-  }, [mergeApiCatalogInState]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const hasData = await refreshCatalogFromApi();
-      if (cancelled || hasData) return;
-      // Mantiene catálogo de localStorage / products.json cuando la API no está disponible
+      setCatalogLoadStatus("loading");
+      await refreshCatalogFromApi();
     })();
 
     return () => {
@@ -250,27 +278,55 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (isCatalogApiAvailable) return;
     window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
-  }, [categories]);
+  }, [categories, isCatalogApiAvailable]);
 
   useEffect(() => {
+    if (isCatalogApiAvailable) return;
     window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
     window.localStorage.setItem(
       PRODUCTS_VERSION_STORAGE_KEY,
       JSON.stringify(PRODUCTS_DATA_VERSION)
     );
-  }, [products]);
+  }, [products, isCatalogApiAvailable]);
 
   useEffect(() => {
     window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(isAdmin));
   }, [isAdmin]);
 
-  const allCategories = useMemo(() => {
-    const categoriesWithProducts = products
-      .map((product) => product.category)
-      .filter(Boolean);
-    return [...new Set([...categories, ...categoriesWithProducts])];
-  }, [categories, products]);
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (!isAdmin) {
+        clearAdminToken();
+        return;
+      }
+
+      const isValid = await verifyAdminSession();
+      if (cancelled) return;
+
+      if (!isValid) {
+        setIsAdmin(false);
+        setActiveView("catalogo");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  const allCategories = useMemo(
+    () =>
+      mergeOrderedCategories(
+        categories.map((name, index) => ({ name, sortOrder: index })),
+        products,
+        DEFAULT_CATEGORIES
+      ),
+    [categories, products]
+  );
 
   const productCategoryOptions = useMemo(
     () => getProductCategoryOptions(allCategories),
@@ -285,18 +341,36 @@ export default function App() {
   }, [allCategories, selectedCategory]);
 
   const visibleProducts = useMemo(() => {
-    if (selectedCategory === "Todas") return products;
-    if (isVeganFilterCategory(selectedCategory)) {
-      return products.filter((product) => product.isVegan);
+    if (selectedProductId) {
+      const product = products.find((item) => item.id === selectedProductId);
+      return product ? [product] : [];
     }
-    if (isGlutenFreeFilterCategory(selectedCategory)) {
-      return products.filter((product) => product.isGlutenFree);
+
+    let filtered = products;
+
+    if (selectedCategory !== "Todas") {
+      if (isVeganFilterCategory(selectedCategory)) {
+        filtered = filtered.filter((product) => product.isVegan);
+      } else if (isGlutenFreeFilterCategory(selectedCategory)) {
+        filtered = filtered.filter((product) => product.isGlutenFree);
+      } else if (isKetoFilterCategory(selectedCategory)) {
+        filtered = filtered.filter((product) => product.isKeto);
+      } else {
+        filtered = filtered.filter((product) => product.category === selectedCategory);
+      }
     }
-    if (isKetoFilterCategory(selectedCategory)) {
-      return products.filter((product) => product.isKeto);
+
+    const normalizedSearch = categorySearch.trim().toLowerCase();
+    if (normalizedSearch) {
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(normalizedSearch) ||
+          product.category.toLowerCase().includes(normalizedSearch)
+      );
     }
-    return products.filter((product) => product.category === selectedCategory);
-  }, [products, selectedCategory]);
+
+    return filtered;
+  }, [products, selectedCategory, selectedProductId, categorySearch]);
 
   const sortCategoryEntries = useCallback(
     (entries) =>
@@ -362,14 +436,29 @@ export default function App() {
     setExpandedAdminCategories(new Set());
   }, []);
 
-  const filteredCategorySuggestions = useMemo(() => {
+  const catalogSearchSuggestions = useMemo(() => {
     const normalizedSearch = categorySearch.trim().toLowerCase();
-    if (!normalizedSearch) return allCategories;
 
-    return allCategories.filter((category) =>
-      category.toLowerCase().includes(normalizedSearch)
-    );
-  }, [allCategories, categorySearch]);
+    const categoryMatches = normalizedSearch
+      ? allCategories.filter((category) => category.toLowerCase().includes(normalizedSearch))
+      : allCategories;
+
+    const productMatches = normalizedSearch
+      ? products
+          .filter(
+            (product) =>
+              product.name.toLowerCase().includes(normalizedSearch) ||
+              product.category.toLowerCase().includes(normalizedSearch)
+          )
+          .slice(0, 12)
+      : [];
+
+    return { categories: categoryMatches, products: productMatches };
+  }, [allCategories, categorySearch, products]);
+
+  const hasCatalogSearchSuggestions =
+    catalogSearchSuggestions.categories.length > 0 ||
+    catalogSearchSuggestions.products.length > 0;
 
   const categoryProductCount = useMemo(() => {
     return products.reduce((acc, product) => {
@@ -387,6 +476,15 @@ export default function App() {
       return acc;
     }, {});
   }, [products]);
+
+  const visibleCategoryChips = useMemo(
+    () =>
+      allCategories.filter((category) => {
+        const count = categoryProductCount[category] ?? 0;
+        return count > 0;
+      }),
+    [allCategories, categoryProductCount]
+  );
 
   const ensureCatalogApiWritable = () => {
     if (!ENABLE_REMOTE_ADMIN_WRITES) {
@@ -431,7 +529,7 @@ export default function App() {
     setCategoryAdminError("");
     await withAdminPendingAction("add-category", async () => {
       await createCategoryApi(normalizedName);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       setNewCategory("");
     }).catch((err) => {
       setCategoryAdminError(err?.message || "No se pudo crear la categoría.");
@@ -462,7 +560,7 @@ export default function App() {
     setCategoryAdminError("");
     await withAdminPendingAction("rename-category", async () => {
       await renameCategoryApi(previousCategory, normalizedName);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       if (selectedCategory === previousCategory) {
         setSelectedCategory(normalizedName);
       }
@@ -484,7 +582,7 @@ export default function App() {
     setCategoryAdminError("");
     await withAdminPendingAction("delete-category", async () => {
       await deleteCategoryApi(categoryToDelete);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       if (selectedCategory === categoryToDelete) {
         setSelectedCategory("Todas");
       }
@@ -577,7 +675,7 @@ export default function App() {
 
     await withAdminPendingAction("add-product", async () => {
       await createProductApi(nextProduct);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       expandAdminCategory(normalizedCategory);
       setNewProductName("");
       setNewProductCategory("Sin tacc");
@@ -605,7 +703,7 @@ export default function App() {
 
     await withAdminPendingAction("delete-product", async () => {
       await deleteProductApi(productId);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       if (editingProductId === productId) {
         setEditingProductId(null);
         setEditingProductDraft(null);
@@ -771,7 +869,7 @@ export default function App() {
 
     await withAdminPendingAction("update-product", async () => {
       await updateProductApi(productId, updatedProduct);
-      await refreshCatalogFromApi();
+      await refreshCatalogFromApi({ showRefreshing: true });
       expandAdminCategory(normalizedCategory);
       setEditingProductId(null);
       setEditingProductDraft(null);
@@ -787,11 +885,14 @@ export default function App() {
     setProductAdminError("");
   };
 
-  const handleAdminLogin = (event) => {
+  const handleAdminLogin = async (event) => {
     event.preventDefault();
-    const normalizedUser = adminUserInput.trim().toLowerCase();
+    setAdminError("");
+    setIsAdminLoginPending(true);
 
-    if (normalizedUser === ADMIN_USER && adminPasswordInput === ADMIN_PASSWORD) {
+    try {
+      const { token } = await loginAdmin(adminUserInput, adminPasswordInput);
+      setAdminToken(token);
       setIsAdmin(true);
       setActiveView("gestion");
       setExpandedAdminCategories(new Set());
@@ -800,14 +901,15 @@ export default function App() {
       setIsAdminModalOpen(false);
       setAdminUserInput("");
       setAdminPasswordInput("");
-      setAdminError("");
-      return;
+    } catch (err) {
+      setAdminError(err?.message || "Usuario o clave incorrecta.");
+    } finally {
+      setIsAdminLoginPending(false);
     }
-
-    setAdminError("Usuario o clave incorrecta.");
   };
 
   const handleAdminLogout = () => {
+    clearAdminToken();
     setIsAdmin(false);
     setActiveView("catalogo");
     setExpandedAdminCategories(new Set());
@@ -852,6 +954,8 @@ export default function App() {
   };
 
   const handleCategorySelect = (category) => {
+    setSelectedProductId(null);
+
     if (category === "Todas") {
       setSelectedCategory("Todas");
       setCategorySearch("");
@@ -868,11 +972,127 @@ export default function App() {
     setCategorySearch(category);
   };
 
+  const handleProductSelect = (product) => {
+    setSelectedProductId(product.id);
+    setSelectedCategory("Todas");
+    setCategorySearch(product.name);
+    setIsCategorySuggestionsOpen(false);
+  };
+
+  const handleResetCatalogView = useCallback(() => {
+    setSelectedCategory("Todas");
+    setCategorySearch("");
+    setSelectedProductId(null);
+    setIsCategorySuggestionsOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProductId) return;
+    const product = products.find((item) => item.id === selectedProductId);
+    if (!product) {
+      setSelectedProductId(null);
+    }
+  }, [products, selectedProductId]);
+
+  const catalogEmptyState = useMemo(() => {
+    if (catalogLoadStatus === "loading" || visibleProducts.length > 0) {
+      return null;
+    }
+
+    const searchText = categorySearch.trim();
+
+    if (catalogLoadStatus === "offline" && products.length === 0) {
+      return {
+        message: "No pudimos cargar el catálogo. Revisá tu conexión e intentá de nuevo.",
+        actionLabel: "Reintentar",
+        onAction: () => refreshCatalogFromApi(),
+      };
+    }
+
+    if (selectedProductId && searchText) {
+      return {
+        message: "El producto que buscabas ya no está en el catálogo.",
+        actionLabel: "Ver todo el catálogo",
+        onAction: handleResetCatalogView,
+      };
+    }
+
+    if (searchText) {
+      return {
+        message: `No encontramos productos para «${searchText}».`,
+        actionLabel: "Limpiar búsqueda",
+        onAction: handleResetCatalogView,
+      };
+    }
+
+    if (selectedCategory !== "Todas") {
+      if (isVeganFilterCategory(selectedCategory)) {
+        return {
+          message: "No hay productos veganos marcados por ahora.",
+          actionLabel: "Ver todas las categorías",
+          onAction: handleResetCatalogView,
+        };
+      }
+      if (isKetoFilterCategory(selectedCategory)) {
+        return {
+          message: "No hay productos aptos keto marcados por ahora.",
+          actionLabel: "Ver todas las categorías",
+          onAction: handleResetCatalogView,
+        };
+      }
+      if (isGlutenFreeFilterCategory(selectedCategory)) {
+        return {
+          message: "No hay productos sin TACC marcados por ahora.",
+          actionLabel: "Ver todas las categorías",
+          onAction: handleResetCatalogView,
+        };
+      }
+      return {
+        message: `No hay productos en «${selectedCategory}» por ahora.`,
+        actionLabel: "Ver todas las categorías",
+        onAction: handleResetCatalogView,
+      };
+    }
+
+    if (products.length === 0) {
+      return {
+        message: "El catálogo está vacío.",
+        actionLabel: null,
+        onAction: null,
+      };
+    }
+
+    return null;
+  }, [
+    catalogLoadStatus,
+    categorySearch,
+    handleResetCatalogView,
+    products.length,
+    refreshCatalogFromApi,
+    selectedCategory,
+    selectedProductId,
+    visibleProducts.length,
+  ]);
+
+  const showSearchNoMatches =
+    isCategorySuggestionsOpen &&
+    categorySearch.trim().length > 0 &&
+    !hasCatalogSearchSuggestions;
+
   return (
     <div className="app-container">
       <header className="site-header">
         <h1 className="site-brand">
-          <img className="site-brand-logo" src="/images/Logo CANELO.svg" alt="Canelo" />
+          <picture>
+            <source srcSet="/images/logo.webp" type="image/webp" />
+            <img
+              className="site-brand-logo"
+              src="/images/logo.jpeg"
+              alt="Dietética Canelo"
+              width={304}
+              height={80}
+            />
+          </picture>
         </h1>
 
         {isAdmin && (
@@ -915,20 +1135,37 @@ export default function App() {
               </section>
             )}
 
+            {catalogLoadStatus === "offline" && products.length > 0 && (
+              <div className="catalog-offline-banner" role="status">
+                No pudimos conectar con el servidor. Mostrando catálogo local.
+              </div>
+            )}
+
+            {isCatalogRefreshing && (
+              <p className="catalog-refreshing-banner" role="status" aria-live="polite">
+                Actualizando catálogo…
+              </p>
+            )}
+
             <section className="category-admin-section">
           <div className="category-filter">
             <label className="field-label" htmlFor="category-filter">
-              Ordenar por categoría
+              Buscar categoría o producto
             </label>
             <input
               id="category-filter"
               className="select-field"
-              type="text"
+              type="search"
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={isCategorySuggestionsOpen}
+              aria-controls="category-filter-suggestions"
               value={categorySearch}
-              placeholder="Buscar categoría..."
+              placeholder="Buscar categoría o producto..."
               onFocus={() => setIsCategorySuggestionsOpen(true)}
               onChange={(event) => {
                 setCategorySearch(event.target.value);
+                setSelectedProductId(null);
                 setIsCategorySuggestionsOpen(true);
               }}
               onBlur={() => {
@@ -936,27 +1173,61 @@ export default function App() {
                   setIsCategorySuggestionsOpen(false);
                 }, 120);
               }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setIsCategorySuggestionsOpen(false);
+                }
+              }}
             />
 
-            {isCategorySuggestionsOpen && (
-              <div className="category-suggestions">
+            {isCategorySuggestionsOpen && (hasCatalogSearchSuggestions || showSearchNoMatches) && (
+              <div
+                id="category-filter-suggestions"
+                className="category-suggestions"
+                role="listbox"
+              >
                 <button
                   type="button"
                   className="category-suggestion-item"
+                  role="option"
                   onMouseDown={() => handleCategorySelect("Todas")}
                 >
                   Todas
                 </button>
-                {filteredCategorySuggestions.map((category) => (
+                {catalogSearchSuggestions.categories.map((category) => (
                   <button
-                    key={category}
+                    key={`category-${category}`}
                     type="button"
                     className="category-suggestion-item"
+                    role="option"
                     onMouseDown={() => handleCategorySelect(category)}
                   >
-                    {category}
+                    <span className="category-suggestion-label">{category}</span>
+                    <span className="category-suggestion-meta">Categoría</span>
                   </button>
                 ))}
+                {catalogSearchSuggestions.products.length > 0 && (
+                  <>
+                    <p className="category-suggestions-heading">Productos</p>
+                    {catalogSearchSuggestions.products.map((product) => (
+                      <button
+                        key={`product-${product.id}`}
+                        type="button"
+                        className="category-suggestion-item category-suggestion-item--product"
+                        role="option"
+                        onMouseDown={() => handleProductSelect(product)}
+                      >
+                        <span className="category-suggestion-label">{product.name}</span>
+                        <span className="category-suggestion-meta">{product.category}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+                {showSearchNoMatches && (
+                  <p className="category-suggestion-empty" role="status">
+                    Sin coincidencias
+                  </p>
+                )}
               </div>
             )}
 
@@ -968,7 +1239,7 @@ export default function App() {
               >
                 Todas
               </button>
-              {allCategories.map((category) => (
+              {visibleCategoryChips.map((category) => (
                 <button
                   key={category}
                   type="button"
@@ -983,16 +1254,38 @@ export default function App() {
         </section>
 
 
-        {groupedProducts.map(([category, categoryProducts]) => (
-          <section key={category} className="category-section">
-            <h2>{category}</h2>
-            <div className="product-grid">
-              {categoryProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={addItem} />
-              ))}
+        <div aria-live="polite" aria-atomic="true" className="catalog-status-region">
+          {catalogLoadStatus === "loading" && (
+            <div className="catalog-loading" role="status">
+              <span className="catalog-loading-spinner" aria-hidden="true" />
+              <p>Cargando catálogo…</p>
             </div>
-          </section>
-        ))}
+          )}
+
+          {catalogEmptyState && (
+            <div className="catalog-empty-panel empty-state">
+              <p>{catalogEmptyState.message}</p>
+              {catalogEmptyState.actionLabel && (
+                <button type="button" className="button" onClick={catalogEmptyState.onAction}>
+                  {catalogEmptyState.actionLabel}
+                </button>
+              )}
+            </div>
+          )}
+
+          {catalogLoadStatus !== "loading" &&
+            !catalogEmptyState &&
+            groupedProducts.map(([category, categoryProducts]) => (
+              <section key={category} className="category-section">
+                <h2>{category}</h2>
+                <div className="product-grid">
+                  {categoryProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToCart={addItem} />
+                  ))}
+                </div>
+              </section>
+            ))}
+        </div>
           </>
         )}
 
@@ -1084,6 +1377,7 @@ export default function App() {
         totals={totals}
         setQuantity={setQuantity}
         removeItem={removeItem}
+        clearCart={clearCart}
       />
 
       {isAdminModalOpen && (
@@ -1130,8 +1424,8 @@ export default function App() {
                 >
                   Cancelar
                 </button>
-                <button className="button primary" type="submit">
-                  Ingresar
+                <button className="button primary" type="submit" disabled={isAdminLoginPending}>
+                  {isAdminLoginPending ? "Ingresando…" : "Ingresar"}
                 </button>
               </div>
             </form>

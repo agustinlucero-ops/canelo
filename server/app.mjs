@@ -14,6 +14,14 @@ import {
   updateProduct,
 } from "./catalog.mjs";
 import { getSql } from "./db.mjs";
+import {
+  createAdminToken,
+  extractBearerToken,
+  getSessionTtlMs,
+  isAdminAuthConfigured,
+  validateAdminCredentials,
+  verifyAdminToken,
+} from "./auth.mjs";
 
 const app = express();
 
@@ -62,6 +70,65 @@ function buildAuditMeta(req, extra = {}) {
   };
 }
 
+function requireAdminAuth(req, res, next) {
+  const token = extractBearerToken(req);
+  if (!verifyAdminToken(token)) {
+    res.status(401).json({
+      error: {
+        code: "unauthorized",
+        message: "Sesión admin inválida o expirada. Volvé a ingresar.",
+      },
+    });
+    return;
+  }
+  next();
+}
+
+app.post("/api/admin/login", (req, res) => {
+  if (!isAdminAuthConfigured()) {
+    res.status(503).json({
+      error: {
+        code: "auth_not_configured",
+        message: "El acceso admin no está configurado en el servidor.",
+      },
+    });
+    return;
+  }
+
+  const { user, password } = req.body ?? {};
+  if (!validateAdminCredentials(user, password)) {
+    res.status(401).json({
+      error: {
+        code: "invalid_credentials",
+        message: "Usuario o clave incorrecta.",
+      },
+    });
+    return;
+  }
+
+  try {
+    const token = createAdminToken();
+    res.json({ ok: true, token, expiresIn: getSessionTtlMs() });
+  } catch (err) {
+    console.error("[api/admin/login]", err);
+    res.status(500).json({
+      error: {
+        code: "auth_error",
+        message: "No se pudo iniciar sesión admin.",
+      },
+    });
+  }
+});
+
+app.get("/api/admin/session", (req, res) => {
+  const token = extractBearerToken(req);
+  if (!verifyAdminToken(token)) {
+    res.status(401).json({ ok: false });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 app.get("/api/health", async (_req, res) => {
   try {
     const query = getSql();
@@ -108,7 +175,7 @@ app.get("/api/products/:id", async (req, res) => {
   }
 });
 
-app.post("/api/categories", async (req, res) => {
+app.post("/api/categories", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "create_category" });
   try {
     const category = await createCategory({ name: req.body?.name });
@@ -120,7 +187,7 @@ app.post("/api/categories", async (req, res) => {
   }
 });
 
-app.put("/api/categories/:name", async (req, res) => {
+app.put("/api/categories/:name", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "rename_category", currentName: req.params.name });
   try {
     const category = await renameCategory({
@@ -135,7 +202,7 @@ app.put("/api/categories/:name", async (req, res) => {
   }
 });
 
-app.delete("/api/categories/:name", async (req, res) => {
+app.delete("/api/categories/:name", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "delete_category", categoryName: req.params.name });
   try {
     const result = await deleteCategory({ name: decodeURIComponent(req.params.name) });
@@ -147,7 +214,7 @@ app.delete("/api/categories/:name", async (req, res) => {
   }
 });
 
-app.post("/api/products", async (req, res) => {
+app.post("/api/products", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "create_product", productId: req.body?.id });
   try {
     const product = await createProduct(req.body ?? {});
@@ -159,7 +226,7 @@ app.post("/api/products", async (req, res) => {
   }
 });
 
-app.put("/api/products/:id", async (req, res) => {
+app.put("/api/products/:id", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "update_product", productId: req.params.id });
   try {
     const product = await updateProduct(req.params.id, req.body ?? {});
@@ -171,7 +238,7 @@ app.put("/api/products/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/products/:id", async (req, res) => {
+app.delete("/api/products/:id", requireAdminAuth, async (req, res) => {
   const actionMeta = buildAuditMeta(req, { action: "delete_product", productId: req.params.id });
   try {
     const result = await deleteProduct(req.params.id);

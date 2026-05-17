@@ -546,18 +546,38 @@ Definir `VITE_WHATSAPP_PHONE` en `.env` (formato internacional sin `+`, solo dí
 
 Archivo `.env` (no versionado, ver `.gitignore`):
 
+Ver plantilla completa en [`.env.example`](./.env.example).
+
 ```env
 DATABASE_URL=postgresql://usuario:password@host/neondb?sslmode=require
 API_PORT=8787
+ADMIN_USER=tu-email@ejemplo.com
+ADMIN_PASSWORD=clave_segura
+ADMIN_SESSION_SECRET=string_aleatorio_largo
 VITE_WHATSAPP_PHONE=54911XXXXXXXX
+VITE_SITE_URL=https://tu-dominio.vercel.app
+VITE_ENABLE_REMOTE_ADMIN_WRITES=true
 ```
 
 | Variable | Ámbito | Uso |
 |----------|--------|-----|
 | `DATABASE_URL` | Servidor | Conexión Neon |
 | `API_PORT` | Servidor | Puerto Express (default 8787) |
+| `ADMIN_USER` | Servidor | Usuario del modal de admin (no va al bundle del cliente) |
+| `ADMIN_PASSWORD` | Servidor | Clave del modal de admin |
+| `ADMIN_SESSION_SECRET` | Servidor | Firma de tokens Bearer para sesión admin (12 h) |
 | `VITE_WHATSAPP_PHONE` | Cliente (build) | Número destino de pedidos por WhatsApp |
 | `VITE_ENABLE_REMOTE_ADMIN_WRITES` | Cliente (build) | Activar/desactivar escritura remota del admin |
+| `VITE_SITE_URL` | Cliente (build) | URL pública para `canonical`, `og:url` e imágenes OG absolutas |
+
+### Autenticación admin (P0)
+
+- El **modal de ingreso** sigue igual en la UI (usuario + clave).
+- Las credenciales viven solo en el servidor (`ADMIN_USER`, `ADMIN_PASSWORD`).
+- `POST /api/admin/login` valida y devuelve un token; el cliente lo guarda en `sessionStorage`.
+- Los endpoints de escritura (`POST`/`PUT`/`DELETE` de categorías y productos) exigen `Authorization: Bearer <token>`.
+- `GET /api/admin/session` permite validar la sesión al recargar la página.
+- Las lecturas públicas del catálogo (`GET /api/categories`, `GET /api/products`) siguen abiertas.
 
 ---
 
@@ -565,13 +585,15 @@ VITE_WHATSAPP_PHONE=54911XXXXXXXX
 
 | Tema | Estado actual | Mejora sugerida |
 |------|---------------|-----------------|
-| Escritura del catálogo | Admin persiste por API en Neon | Agregar auth/roles para proteger endpoints |
-| Credenciales admin | En código fuente (`App.jsx`) | Auth en servidor, JWT o proveedor externo |
+| Escritura del catálogo | Protegida con token Bearer tras login | Roles múltiples / OAuth en el futuro |
+| Credenciales admin | Variables `ADMIN_*` en servidor | Rotar clave periódicamente; no usar `VITE_` para secretos |
 | WhatsApp | Configurable por env; placeholder si falta | Definir número real en `.env` de producción |
 | Pedidos | Solo mensaje WA, sin registro | Opcional: guardar pedidos en DB o Google Sheets |
-| Imágenes admin en base64 | Pesado en localStorage | Subida a storage (S3, Cloudinary, etc.) |
+| Imágenes admin en base64 | Pesado en DB; subida desde panel admin | Storage externo (S3, Cloudinary) en hito futuro |
+| Catálogo en cliente | Fuente oficial: API Neon cuando responde | Sin persistir `canelo.products` / `canelo.categories` si la API está activa (`PRODUCTS_DATA_VERSION` 12) |
 | Tests | No hay suite automatizada | Tests unitarios de sanitize, carrito y API |
-| PWA / SEO | SPA básica | meta tags, manifest si se publica |
+| PWA | Sin manifest | Opcional si se publica como app instalable |
+| Footer / contacto | Pendiente de contenido | Horarios, dirección y redes en hito futuro |
 | Parse PDF | Script `catalog:parse-pdf` disponible | Integrar flujo de importación al admin o seed |
 
 ---
@@ -585,7 +607,7 @@ VITE_WHATSAPP_PHONE=54911XXXXXXXX
 5. **Filtro vegano** desacoplado de la categoría de producto.
 6. **Branding** con logo WebP/JPEG e iconografía Lucide.
 7. **API + Neon** con migraciones incrementales, seed, lectura y CRUD de catálogo.
-8. **UX** con bloqueo de scroll en overlays y carga inicial desde API.
+8. **UX** con bloqueo de scroll en overlays, carga desde API, banner offline, estados vacíos, orden de categorías por `sort_order`, SEO básico y carrito que se vacía tras enviar pedido por WhatsApp.
 
 ---
 

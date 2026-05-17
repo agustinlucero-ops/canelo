@@ -6,11 +6,12 @@ Tienda web para **Dietética Canelo**: catálogo por categorías, carrito, pedid
 
 ```bash
 npm install
-# Crear .env con DATABASE_URL y VITE_WHATSAPP_PHONE
-# (Opcional) VITE_ENABLE_REMOTE_ADMIN_WRITES=true
+cp .env.example .env   # completar DATABASE_URL, ADMIN_* y VITE_*
 npm run db:setup       # migración + seed (requiere Neon)
 npm run dev            # frontend (Vite) + API (Express)
 ```
+
+En **Vercel**, además de `DATABASE_URL` y las `VITE_*`, configurar `ADMIN_USER`, `ADMIN_PASSWORD` y `ADMIN_SESSION_SECRET` (ver `.env.example`).
 
 ## Estado actual del admin
 
@@ -28,7 +29,12 @@ npm run dev            # frontend (Vite) + API (Express)
 | `npm run db:seed` | Carga catálogo desde `src/data/products.json` |
 | `npm run db:setup` | Migración + seed |
 
-## Endpoints admin CRUD
+## Auth admin
+
+- `POST /api/admin/login` — valida usuario/clave (env servidor) y devuelve token
+- `GET /api/admin/session` — valida token Bearer
+
+## Endpoints admin CRUD (requieren `Authorization: Bearer <token>`)
 
 - `POST /api/categories`
 - `PUT /api/categories/:name`
