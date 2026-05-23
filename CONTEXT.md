@@ -28,6 +28,14 @@ _Avoid_: Listado, planilla, inventario
 Producto que ya figura en el catálogo en línea antes de una importación.
 _Avoid_: Duplicado, viejo, legacy
 
+**Carrito**:
+Conjunto de productos que el cliente selecciona en la tienda antes de armar el pedido por WhatsApp.
+_Avoid_: Cart, bolsa, cesta
+
+**Confirmación de agregado**:
+Aviso breve y visible que confirma al cliente que un producto entró al carrito.
+_Avoid_: Toast, snackbar, notificación push
+
 **Tipo de archivo**:
 Elección explícita al importar: catálogo completo (comparar con la tienda) o solo productos nuevos (agregar filas del archivo).
 _Avoid_: Modo, estrategia de diff
@@ -38,6 +46,7 @@ _Avoid_: Modo, estrategia de diff
 - **Publicar** transfiere ítems del **Borrador** al **Catálogo en línea**
 - Un **Producto existente** se identifica por nombre normalizado (sin acentos, minúsculas)
 - Los clientes solo ven el **Catálogo en línea**, nunca un **Borrador**
+- Agregar un producto desde una tarjeta dispara una **Confirmación de agregado** y actualiza el **Carrito**
 
 ## Example dialogue
 

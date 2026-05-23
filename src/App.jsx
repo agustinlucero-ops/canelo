@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
+import CartAddToast from "./components/CartAddToast";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
@@ -35,6 +36,8 @@ import {
   isVeganFilterCategory,
 } from "./utils/productCategories";
 import { sanitizeProducts } from "./utils/sanitizeCatalog";
+import { CART_ADD_TOAST_MESSAGE } from "./utils/cartAddToast";
+import { createTimedNotice } from "./utils/timedNotice";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
@@ -95,6 +98,27 @@ export default function App() {
   const { items, totals, addItem, setQuantity, removeItem, clearCart, reconcileWithCatalog } =
     useCart();
   const [cartReconcileNotice, setCartReconcileNotice] = useState("");
+  const [cartAddToastMessage, setCartAddToastMessage] = useState("");
+  const cartAddNoticeRef = useRef(null);
+
+  useEffect(() => {
+    cartAddNoticeRef.current = createTimedNotice({
+      onShow: setCartAddToastMessage,
+      onHide: () => setCartAddToastMessage(""),
+    });
+
+    return () => {
+      cartAddNoticeRef.current?.cancel();
+    };
+  }, []);
+
+  const handleAddToCart = useCallback(
+    (product, presentation) => {
+      addItem(product, presentation);
+      cartAddNoticeRef.current?.show(CART_ADD_TOAST_MESSAGE);
+    },
+    [addItem]
+  );
 
   useEffect(() => {
     if (totals.totalItems > prevTotalItemsRef.current) {
@@ -1256,7 +1280,7 @@ export default function App() {
                 <h2>{category}</h2>
                 <div className="product-grid">
                   {categoryProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAddToCart={addItem} />
+                    <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
                   ))}
                 </div>
               </section>
@@ -1410,6 +1434,8 @@ export default function App() {
           </div>
         </>
       )}
+
+      <CartAddToast message={cartAddToastMessage} />
     </div>
   );
 }
