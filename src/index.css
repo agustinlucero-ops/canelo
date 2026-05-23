@@ -735,6 +735,63 @@ p {
   color: #374151;
 }
 
+.admin-import-upload {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-import-fieldset {
+  border: 1px solid #dce5dc;
+  border-radius: 0.65rem;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-import-radio {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.92rem;
+}
+
+.admin-import-banner {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+}
+
+.admin-import-review {
+  margin-top: 1rem;
+}
+
+.admin-import-category {
+  margin-top: 1rem;
+}
+
+.admin-import-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-import-list {
+  margin-top: 0.75rem;
+}
+
+.admin-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 .catalog-status-region {
   display: grid;
   gap: 1rem;

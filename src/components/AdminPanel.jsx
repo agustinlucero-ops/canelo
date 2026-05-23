@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchOrders } from "../api/orders";
 import CollapsibleSection from "./CollapsibleSection";
 import ProductEditModal from "./ProductEditModal";
+import CatalogImportPanel from "./CatalogImportPanel";
 import { formatPrice } from "../utils/whatsapp";
 
 function formatPresentationsSummary(presentations) {
@@ -127,6 +128,8 @@ export default function AdminPanel({
   onDeleteProduct,
   onLogout,
   normalizeCategoryName,
+  onCatalogRefresh,
+  onPendingChange,
 }) {
   const isMutating = Boolean(adminPendingAction);
   const isReadOnly = !isCatalogApiAvailable;
@@ -217,6 +220,15 @@ export default function AdminPanel({
           </ul>
         )}
       </CollapsibleSection>
+
+      <CatalogImportPanel
+        isActionDisabled={isActionDisabled}
+        isCatalogApiAvailable={isCatalogApiAvailable}
+        productCategoryOptions={productCategoryOptions}
+        onCatalogRefresh={onCatalogRefresh}
+        adminPendingAction={adminPendingAction}
+        onPendingChange={onPendingChange}
+      />
 
       <CollapsibleSection
         title="Categorías"

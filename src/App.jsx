@@ -1324,6 +1324,8 @@ export default function App() {
             onDeleteProduct={handleDeleteProduct}
             onLogout={handleAdminLogout}
             normalizeCategoryName={normalizeCategoryName}
+            onCatalogRefresh={refreshCatalogFromApi}
+            onPendingChange={setAdminPendingAction}
           />
         )}
       </main>

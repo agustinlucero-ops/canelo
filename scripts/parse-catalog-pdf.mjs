@@ -1,6 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  extractProductsFromPdfText,
+  normalizeProductNameForMatch,
+} from "../server/catalogImport.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pdfPath = join(__dirname, "..", "docs", "catalogo-canelo.pdf");
@@ -9,63 +13,9 @@ const reportPath = join(__dirname, "catalog-diff-report.json");
 
 const isStrict = process.argv.includes("--strict");
 
-function normalizeName(value) {
-  return String(value ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function parsePriceToken(token) {
-  const digits = String(token).replace(/[^\d]/g, "");
-  if (!digits) return null;
-  return Number(digits);
-}
-
-function extractProductsFromText(text) {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  const products = [];
-  let currentCategory = "Sin tacc";
-
-  for (const line of lines) {
-    if (/^categor[ií]a\b/i.test(line)) {
-      continue;
-    }
-
-    if (line.length <= 40 && line === line.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(line)) {
-      currentCategory = line
-        .replace(/^[^\wÁÉÍÓÚÑ]+/u, "")
-        .replace(/[^\wÁÉÍÓÚÑ\s\/-]+$/u, "")
-        .trim();
-      continue;
-    }
-
-    const priceMatch = line.match(/(.+?)\s+[\$]?\s*([\d.]{2,})\s*$/);
-    if (!priceMatch) continue;
-
-    const name = priceMatch[1].trim();
-    const price = parsePriceToken(priceMatch[2]);
-    if (!name || !price || price <= 0) continue;
-
-    products.push({
-      name,
-      category: currentCategory,
-      presentations: [{ label: "1u", price }],
-    });
-  }
-
-  return products;
-}
-
 function buildDiff(pdfProducts, jsonProducts) {
-  const pdfByName = new Map(pdfProducts.map((p) => [normalizeName(p.name), p]));
-  const jsonByName = new Map(jsonProducts.map((p) => [normalizeName(p.name), p]));
+  const pdfByName = new Map(pdfProducts.map((p) => [normalizeProductNameForMatch(p.name), p]));
+  const jsonByName = new Map(jsonProducts.map((p) => [normalizeProductNameForMatch(p.name), p]));
 
   const onlyInPdf = [];
   const onlyInJson = [];
@@ -89,7 +39,7 @@ function buildDiff(pdfProducts, jsonProducts) {
       });
     }
 
-    if (normalizeName(pdfProduct.category) !== normalizeName(jsonProduct.category)) {
+    if (normalizeProductNameForMatch(pdfProduct.category) !== normalizeProductNameForMatch(jsonProduct.category)) {
       categoryMismatches.push({
         name: pdfProduct.name,
         pdfCategory: pdfProduct.category,
@@ -126,7 +76,7 @@ async function main() {
 
   const pdfBuffer = readFileSync(pdfPath);
   const parsed = await pdfParse(pdfBuffer);
-  const pdfProducts = extractProductsFromText(parsed.text || "");
+  const pdfProducts = extractProductsFromPdfText(parsed.text || "");
   const jsonProducts = JSON.parse(readFileSync(productsPath, "utf8"));
 
   const report = {
