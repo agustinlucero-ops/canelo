@@ -1,5 +1,7 @@
 import { Trash2, X } from "lucide-react";
 import { formatPrice } from "../utils/whatsapp";
+import { PRODUCT_TYPE_FLAVOR_LINE } from "../utils/sanitizeCatalog";
+import FlavorLineEditModal from "./FlavorLineEditModal";
 
 function draftToPreviewProduct(draft) {
   const presentations = draft.presentations
@@ -35,9 +37,36 @@ export default function ProductEditModal({
   onAddPresentationToDraft,
   onRemovePresentationFromDraft,
   onEditProductImageFile,
+  onEditVariantField,
+  onAddVariantToDraft,
+  onRemoveVariantFromDraft,
+  onEditVariantImageFile,
   isActionDisabled = false,
   isSaving = false,
 }) {
+  if (draft?.productType === PRODUCT_TYPE_FLAVOR_LINE) {
+    return (
+      <FlavorLineEditModal
+        draft={draft}
+        productCategoryOptions={productCategoryOptions}
+        productAdminError={productAdminError}
+        onClose={onClose}
+        onSave={onSave}
+        onEditProductField={onEditProductField}
+        onEditProductPresentationField={onEditProductPresentationField}
+        onAddPresentationToDraft={onAddPresentationToDraft}
+        onRemovePresentationFromDraft={onRemovePresentationFromDraft}
+        onEditVariantField={onEditVariantField}
+        onAddVariantToDraft={onAddVariantToDraft}
+        onRemoveVariantFromDraft={onRemoveVariantFromDraft}
+        onEditProductImageFile={onEditProductImageFile}
+        onEditVariantImageFile={onEditVariantImageFile}
+        isActionDisabled={isActionDisabled}
+        isSaving={isSaving}
+      />
+    );
+  }
+
   const previewProduct = draftToPreviewProduct(draft);
 
   return (

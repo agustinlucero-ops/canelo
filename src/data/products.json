@@ -320,76 +320,86 @@
     ]
   },
   {
-    "id": "cuca-tradicional",
-    "name": "CUCA tradicional",
+    "id": "granola-cuca",
+    "name": "Granola CUCA",
     "category": "Granolas",
+    "productType": "flavor-line",
     "image": "/images/products/granola.svg",
     "presentations": [
       {
         "label": "1kg",
         "price": 10300
       }
-    ]
-  },
-  {
-    "id": "cuca-cacao-coco",
-    "name": "CUCA cacao y coco",
-    "category": "Granolas",
-    "image": "/images/products/granola.svg",
-    "presentations": [
+    ],
+    "variants": [
       {
-        "label": "1kg",
-        "price": 10300
+        "id": "cuca-tradicional",
+        "label": "Tradicional",
+        "image": "/images/products/granola.svg",
+        "description": "Receta clásica de la línea CUCA.",
+        "contents": ["Avena", "Miel", "Semillas"],
+        "isVegan": false,
+        "outOfStock": false
+      },
+      {
+        "id": "cuca-cacao-coco",
+        "label": "Cacao y coco",
+        "image": "/images/products/granola.svg",
+        "description": "Con cacao amargo y coco rallado.",
+        "contents": ["Avena", "Cacao", "Coco"],
+        "isVegan": false,
+        "outOfStock": false
+      },
+      {
+        "id": "cuca-vegana-stevia",
+        "label": "Vegana con stevia",
+        "image": "/images/products/granola.svg",
+        "description": "Endulzada con stevia, apta vegana.",
+        "contents": ["Avena", "Stevia", "Semillas"],
+        "isVegan": true,
+        "outOfStock": false
       }
     ]
   },
   {
-    "id": "tutti-grani-almendra",
-    "name": "TUTTI GRANI almendra",
+    "id": "granola-tutti-grani",
+    "name": "Granola TUTTI GRANI",
     "category": "Granolas",
+    "productType": "flavor-line",
     "image": "/images/products/granola.svg",
     "presentations": [
       {
         "label": "1kg",
         "price": 9800
       }
-    ]
-  },
-  {
-    "id": "tutti-grani-tradicional",
-    "name": "TUTTI GRANI tradicional",
-    "category": "Granolas",
-    "image": "/images/products/granola.svg",
-    "presentations": [
+    ],
+    "variants": [
       {
-        "label": "1kg",
-        "price": 9800
-      }
-    ]
-  },
-  {
-    "id": "cuca-vegana-stevia",
-    "name": "Granola CUCA vegana con stevia",
-    "category": "Granolas",
-    "isVegan": true,
-    "image": "/images/products/granola.svg",
-    "presentations": [
+        "id": "tutti-grani-almendra",
+        "label": "Almendra",
+        "image": "/images/products/granola.svg",
+        "description": "Con almendras seleccionadas.",
+        "contents": ["Avena", "Almendras", "Miel"],
+        "isVegan": false,
+        "outOfStock": false
+      },
       {
-        "label": "1kg",
-        "price": 10300
-      }
-    ]
-  },
-  {
-    "id": "tutti-grani-stevia-vegana",
-    "name": "Granola TUTTI GRANI stevia vegana",
-    "category": "Granolas",
-    "isVegan": true,
-    "image": "/images/products/granola.svg",
-    "presentations": [
+        "id": "tutti-grani-tradicional",
+        "label": "Tradicional",
+        "image": "/images/products/granola.svg",
+        "description": "Receta tradicional TUTTI GRANI.",
+        "contents": ["Avena", "Miel", "Pasas"],
+        "isVegan": false,
+        "outOfStock": false
+      },
       {
-        "label": "1kg",
-        "price": 9800
+        "id": "tutti-grani-stevia-vegana",
+        "label": "Stevia vegana",
+        "image": "/images/products/granola.svg",
+        "description": "Endulzada con stevia, apta vegana.",
+        "contents": ["Avena", "Stevia", "Semillas"],
+        "isVegan": true,
+        "outOfStock": false
       }
     ]
   },

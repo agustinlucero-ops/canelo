@@ -23,6 +23,34 @@ describe("cartReducer", () => {
     expect(second.items[0].quantity).toBe(2);
   });
 
+  it("adds a flavor-line item with line and flavor in the name", () => {
+    const state = cartReducer(cartInitialState, {
+      type: "ADD_FLAVOR_LINE_ITEM",
+      payload: {
+        line: {
+          id: "granola-cuca",
+          name: "Granola CUCA",
+          image: "/images/products/granola.svg",
+        },
+        variant: {
+          id: "cuca-tradicional",
+          label: "Tradicional",
+          image: "/images/products/granola.svg",
+        },
+        presentation: { label: "1kg", price: 10300 },
+      },
+    });
+
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0]).toMatchObject({
+      productId: "cuca-tradicional",
+      lineId: "granola-cuca",
+      name: "Granola CUCA — Tradicional",
+      presentation: "1kg",
+      unitPrice: 10300,
+    });
+  });
+
   it("computes totals", () => {
     const state = cartReducer(cartInitialState, {
       type: "ADD_ITEM",

@@ -1,5 +1,23 @@
 import { normalizeProductName } from "../../src/utils/productName.js";
-import { resolveProductCategoryAndVegan } from "../../src/utils/productCategories.js";
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  sanitizePresentations,
+  sanitizeProducts as sanitizeProductsCore,
+  sanitizeVariants,
+} from "../../src/utils/sanitizeCatalog.js";
+
+export {
+  DEFAULT_PRODUCT_IMAGE,
+  PRODUCT_TYPE_FLAVOR_LINE,
+  PRODUCT_TYPE_SIMPLE,
+} from "../../src/utils/sanitizeCatalog.js";
+
+export { sanitizePresentations, sanitizeVariants };
+
+export function sanitizeProducts(productList) {
+  const products = sanitizeProductsCore(productList);
+  return { products, skipped: [] };
+}
 
 export const DEFAULT_CATEGORIES = [
   "Sin tacc",
@@ -21,8 +39,6 @@ export const DEFAULT_CATEGORIES = [
   "Congelados",
 ];
 
-export const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
-
 const normalizeCategoryName = (value) => value.trim().replace(/\s+/g, " ");
 
 export const normalizeCategoryLabel = (value) => {
@@ -30,63 +46,9 @@ export const normalizeCategoryLabel = (value) => {
   return normalizedValue.toLowerCase() === "ceriales" ? "Cereales" : normalizedValue;
 };
 
-const sanitizePresentations = (presentations) => {
-  if (!Array.isArray(presentations)) return [];
-
-  return presentations
-    .map((presentation) => {
-      const label = String(presentation?.label ?? "").trim();
-      const price = Number(presentation?.price);
-      if (!label || Number.isNaN(price) || price <= 0) return null;
-      return {
-        label,
-        price: Math.round(price),
-      };
-    })
-    .filter(Boolean);
-};
-
-export function sanitizeProducts(productList) {
-  if (!Array.isArray(productList)) return { products: [], skipped: [] };
-
-  const skipped = [];
-
-  const products = productList
-    .map((product, index) => {
-      const id = String(product?.id ?? "").trim() || `producto-${index + 1}`;
-      const normalizedCategory =
-        normalizeCategoryLabel(String(product?.category ?? "").trim()) || "Sin tacc";
-      const { category, isVegan, isKeto, isGlutenFree } = resolveProductCategoryAndVegan(
-        product,
-        normalizedCategory
-      );
-      const name = normalizeProductName(String(product?.name ?? "").trim(), category);
-      const image = String(product?.image ?? "").trim() || DEFAULT_PRODUCT_IMAGE;
-      const presentations = sanitizePresentations(product?.presentations);
-
-      if (!name || !presentations.length) {
-        skipped.push({ id, reason: "nombre o presentaciones inválidas" });
-        return null;
-      }
-
-      return {
-        id,
-        name,
-        category,
-        image,
-        presentations,
-        isVegan,
-        isKeto,
-        isGlutenFree,
-        outOfStock: Boolean(product?.outOfStock),
-      };
-    })
-    .filter(Boolean);
-
-  return { products, skipped };
-}
-
 export function collectCategoryNames(products) {
   const fromProducts = products.map((product) => product.category).filter(Boolean);
   return [...new Set([...DEFAULT_CATEGORIES, ...fromProducts])];
 }
+
+export { normalizeProductName };

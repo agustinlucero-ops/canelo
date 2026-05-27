@@ -2,6 +2,8 @@ import { getSql } from "./db.mjs";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 const DEFAULT_CATEGORY = "Sin tacc";
+const PRODUCT_TYPE_SIMPLE = "simple";
+const PRODUCT_TYPE_FLAVOR_LINE = "flavor-line";
 const RESERVED_CATEGORY_NAMES = new Set(["veganos", "vegano", "keto", "apto keto"]);
 
 export class CatalogError extends Error {
@@ -42,6 +44,38 @@ function normalizePresentations(presentations) {
     .filter(Boolean);
 }
 
+function normalizeProductType(value) {
+  const normalized = normalizeText(value) || PRODUCT_TYPE_SIMPLE;
+  return normalized === PRODUCT_TYPE_FLAVOR_LINE ? PRODUCT_TYPE_FLAVOR_LINE : PRODUCT_TYPE_SIMPLE;
+}
+
+function normalizeVariants(variants) {
+  if (!Array.isArray(variants)) return [];
+
+  return variants
+    .map((variant, index) => {
+      const id = normalizeText(variant?.id) || `sabor-${index + 1}`;
+      const label = normalizeText(variant?.label);
+      const image = normalizeText(variant?.image) || DEFAULT_PRODUCT_IMAGE;
+      const description = normalizeText(variant?.description);
+      const contents = Array.isArray(variant?.contents)
+        ? variant.contents.map((entry) => normalizeText(entry)).filter(Boolean)
+        : [];
+      if (!label) return null;
+
+      return {
+        id,
+        label,
+        image,
+        description,
+        contents,
+        isVegan: normalizeBoolean(variant?.isVegan),
+        outOfStock: normalizeBoolean(variant?.outOfStock),
+      };
+    })
+    .filter(Boolean);
+}
+
 async function findCategoryByName(sql, categoryName) {
   const normalizedCategoryName = normalizeText(categoryName);
   if (!normalizedCategoryName) return null;
@@ -71,7 +105,9 @@ function mapProductRow(row) {
     name: row.name,
     category: row.category,
     image: row.image,
+    productType: row.product_type ?? PRODUCT_TYPE_SIMPLE,
     presentations: row.presentations,
+    variants: Array.isArray(row.variants) ? row.variants : [],
     isVegan: row.is_vegan,
     isKeto: row.is_keto,
     isGlutenFree: row.is_gluten_free,
@@ -98,13 +134,13 @@ export async function listProducts({ category } = {}) {
 
   const rows = normalizedCategory
     ? await sql`
-        SELECT id, name, category, image, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
         FROM products
         WHERE lower(category) = lower(${normalizedCategory})
         ORDER BY name ASC
       `
     : await sql`
-        SELECT id, name, category, image, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
         FROM products
         ORDER BY category ASC, name ASC
       `;
@@ -115,7 +151,7 @@ export async function listProducts({ category } = {}) {
 export async function getProductById(id) {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, name, category, image, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
     FROM products
     WHERE id = ${id}
     LIMIT 1
@@ -264,6 +300,14 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
     input?.presentations !== undefined
       ? normalizePresentations(input.presentations)
       : baseProduct?.presentations ?? [];
+  const normalizedProductType =
+    input?.productType !== undefined
+      ? normalizeProductType(input.productType)
+      : normalizeProductType(baseProduct?.productType);
+  const normalizedVariants =
+    input?.variants !== undefined
+      ? normalizeVariants(input.variants)
+      : normalizeVariants(baseProduct?.variants);
 
   if (!normalizedName) {
     throw new CatalogError("invalid_product_name", "El nombre del producto es obligatorio.");
@@ -274,16 +318,21 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
   if (!normalizedPresentations.length) {
     throw new CatalogError("invalid_presentations", "Debe haber al menos una presentación válida.");
   }
+  if (normalizedProductType === PRODUCT_TYPE_FLAVOR_LINE && !normalizedVariants.length) {
+    throw new CatalogError("invalid_variants", "Debe haber al menos un sabor válido.");
+  }
 
   return {
     name: normalizedName,
     category: categoryName,
     image: normalizedImage,
+    productType: normalizedProductType,
     isVegan: normalizedIsVegan,
     isKeto: normalizedIsKeto,
     isGlutenFree: normalizedIsGlutenFree,
     outOfStock: normalizedOutOfStock,
     presentations: normalizedPresentations,
+    variants: normalizedProductType === PRODUCT_TYPE_FLAVOR_LINE ? normalizedVariants : [],
   };
 }
 
@@ -309,12 +358,15 @@ export async function createProduct(input) {
   }
 
   const presentationsJson = JSON.stringify(payload.presentations);
+  const variantsJson = JSON.stringify(payload.variants);
   const rows = await sql`
     INSERT INTO products (
       id,
       name,
       category,
       image,
+      product_type,
+      variants,
       is_vegan,
       is_keto,
       is_gluten_free,
@@ -326,13 +378,15 @@ export async function createProduct(input) {
       ${payload.name},
       ${payload.category},
       ${payload.image},
+      ${payload.productType},
+      ${variantsJson}::jsonb,
       ${payload.isVegan},
       ${payload.isKeto},
       ${payload.isGlutenFree},
       ${payload.outOfStock},
       ${presentationsJson}::jsonb
     )
-    RETURNING id, name, category, image, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
   `;
   return mapProductRow(rows[0]);
 }
@@ -346,6 +400,7 @@ export async function updateProduct(id, input) {
 
   const payload = await buildProductPayload(sql, input, { baseProduct: current });
   const presentationsJson = JSON.stringify(payload.presentations);
+  const variantsJson = JSON.stringify(payload.variants);
 
   const rows = await sql`
     UPDATE products
@@ -353,6 +408,8 @@ export async function updateProduct(id, input) {
       name = ${payload.name},
       category = ${payload.category},
       image = ${payload.image},
+      product_type = ${payload.productType},
+      variants = ${variantsJson}::jsonb,
       is_vegan = ${payload.isVegan},
       is_keto = ${payload.isKeto},
       is_gluten_free = ${payload.isGlutenFree},
@@ -360,7 +417,7 @@ export async function updateProduct(id, input) {
       presentations = ${presentationsJson}::jsonb,
       updated_at = now()
     WHERE id = ${id}
-    RETURNING id, name, category, image, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
   `;
   return mapProductRow(rows[0]);
 }

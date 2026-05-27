@@ -123,6 +123,10 @@ export default function AdminPanel({
   onAddPresentationToDraft,
   onRemovePresentationFromDraft,
   onEditProductImageFile,
+  onEditVariantField,
+  onAddVariantToDraft,
+  onRemoveVariantFromDraft,
+  onEditVariantImageFile,
   onSaveEditedProduct,
   onCancelEditProduct,
   onDeleteProduct,
@@ -499,6 +503,10 @@ export default function AdminPanel({
           onAddPresentationToDraft={onAddPresentationToDraft}
           onRemovePresentationFromDraft={onRemovePresentationFromDraft}
           onEditProductImageFile={onEditProductImageFile}
+          onEditVariantField={onEditVariantField}
+          onAddVariantToDraft={onAddVariantToDraft}
+          onRemoveVariantFromDraft={onRemoveVariantFromDraft}
+          onEditVariantImageFile={onEditVariantImageFile}
           isActionDisabled={isActionDisabled}
           isSaving={isMutating}
         />

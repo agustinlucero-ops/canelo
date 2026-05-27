@@ -1,0 +1,5 @@
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS product_type TEXT NOT NULL DEFAULT 'simple';
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS variants JSONB NOT NULL DEFAULT '[]'::jsonb;

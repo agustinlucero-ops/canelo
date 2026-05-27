@@ -55,4 +55,83 @@ describe("reconcileCartItems", () => {
     expect(removedCount).toBe(1);
     expect(items).toHaveLength(0);
   });
+
+  it("updates flavor-line cart items from line presentations and variant stock", () => {
+    const flavorLineProducts = [
+      {
+        id: "granola-cuca",
+        name: "Granola CUCA",
+        productType: "flavor-line",
+        image: "/images/products/granola.svg",
+        outOfStock: false,
+        presentations: [{ label: "1kg", price: 11000 }],
+        variants: [
+          {
+            id: "cuca-tradicional",
+            label: "Tradicional",
+            image: "/images/products/granola.svg",
+            outOfStock: false,
+          },
+        ],
+      },
+    ];
+
+    const { items, removedCount } = reconcileCartItems(
+      [
+        {
+          key: "cuca-tradicional-1kg",
+          productId: "cuca-tradicional",
+          lineId: "granola-cuca",
+          flavorLabel: "Tradicional",
+          name: "Granola CUCA — Tradicional",
+          image: "/images/products/granola.svg",
+          presentation: "1kg",
+          unitPrice: 10300,
+          quantity: 1,
+        },
+      ],
+      flavorLineProducts
+    );
+
+    expect(removedCount).toBe(0);
+    expect(items[0].unitPrice).toBe(11000);
+    expect(items[0].name).toBe("Granola CUCA — Tradicional");
+  });
+
+  it("removes flavor-line cart items when the variant is out of stock", () => {
+    const flavorLineProducts = [
+      {
+        id: "granola-cuca",
+        productType: "flavor-line",
+        presentations: [{ label: "1kg", price: 10300 }],
+        variants: [
+          {
+            id: "cuca-tradicional",
+            label: "Tradicional",
+            image: "/images/products/granola.svg",
+            outOfStock: true,
+          },
+        ],
+      },
+    ];
+
+    const { items, removedCount } = reconcileCartItems(
+      [
+        {
+          key: "cuca-tradicional-1kg",
+          productId: "cuca-tradicional",
+          lineId: "granola-cuca",
+          name: "Granola CUCA — Tradicional",
+          image: "/images/products/granola.svg",
+          presentation: "1kg",
+          unitPrice: 10300,
+          quantity: 1,
+        },
+      ],
+      flavorLineProducts
+    );
+
+    expect(removedCount).toBe(1);
+    expect(items).toHaveLength(0);
+  });
 });

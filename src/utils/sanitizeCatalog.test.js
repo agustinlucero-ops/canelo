@@ -37,4 +37,43 @@ describe("sanitizeProducts", () => {
     expect(product.name).toBeTruthy();
     expect(product.image).toContain("/images/");
   });
+
+  it("keeps a flavor-line with sanitized variants", () => {
+    const [line] = sanitizeProducts([
+      {
+        id: "granola-cuca",
+        name: "Granola CUCA",
+        category: "Granolas",
+        productType: "flavor-line",
+        presentations: [{ label: "1kg", price: 10300 }],
+        variants: [
+          {
+            id: "cuca-tradicional",
+            label: "Tradicional",
+            image: "/images/products/granola.svg",
+            description: "Clásica y crocante.",
+            contents: ["Avena", "Miel"],
+            isVegan: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(line).toMatchObject({
+      id: "granola-cuca",
+      productType: "flavor-line",
+      presentations: [{ label: "1kg", price: 10300 }],
+      variants: [
+        {
+          id: "cuca-tradicional",
+          label: "Tradicional",
+          description: "Clásica y crocante.",
+          contents: ["Avena", "Miel"],
+          isVegan: false,
+          outOfStock: false,
+        },
+      ],
+    });
+    expect(line.variants[0].image).toContain("/images/");
+  });
 });

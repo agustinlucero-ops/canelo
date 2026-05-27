@@ -36,6 +36,14 @@ _Avoid_: Cart, bolsa, cesta
 Aviso breve y visible que confirma al cliente que un producto entró al carrito.
 _Avoid_: Toast, snackbar, notificación push
 
+**Línea de producto**:
+Ítem del catálogo en línea que agrupa varios sabores bajo una misma marca o familia (ej. Granola CUCA).
+_Avoid_: Producto padre, combo, familia
+
+**Sabor**:
+Opción elegible dentro de una línea; tiene foto, descripción y lista de contenido propios.
+_Avoid_: Variante, presentación, subproducto
+
 **Tipo de archivo**:
 Elección explícita al importar: catálogo completo (comparar con la tienda) o solo productos nuevos (agregar filas del archivo).
 _Avoid_: Modo, estrategia de diff
@@ -47,6 +55,7 @@ _Avoid_: Modo, estrategia de diff
 - Un **Producto existente** se identifica por nombre normalizado (sin acentos, minúsculas)
 - Los clientes solo ven el **Catálogo en línea**, nunca un **Borrador**
 - Agregar un producto desde una tarjeta dispara una **Confirmación de agregado** y actualiza el **Carrito**
+- Una **Línea de producto** tiene uno o más **Sabores**; el cliente agrega al **Carrito** un **Sabor** concreto de esa línea
 
 ## Example dialogue
 

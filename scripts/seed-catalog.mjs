@@ -21,12 +21,15 @@ async function upsertCategory(sql, name, sortOrder) {
 
 async function upsertProduct(sql, product) {
   const presentationsJson = JSON.stringify(product.presentations);
+  const variantsJson = JSON.stringify(product.variants ?? []);
   await sql`
     INSERT INTO products (
       id,
       name,
       category,
       image,
+      product_type,
+      variants,
       is_vegan,
       is_keto,
       is_gluten_free,
@@ -38,6 +41,8 @@ async function upsertProduct(sql, product) {
       ${product.name},
       ${product.category},
       ${product.image},
+      ${product.productType ?? "simple"},
+      ${variantsJson}::jsonb,
       ${product.isVegan},
       ${product.isKeto},
       ${product.isGlutenFree},
@@ -48,6 +53,8 @@ async function upsertProduct(sql, product) {
       name = EXCLUDED.name,
       category = EXCLUDED.category,
       image = EXCLUDED.image,
+      product_type = EXCLUDED.product_type,
+      variants = EXCLUDED.variants,
       is_vegan = EXCLUDED.is_vegan,
       is_keto = EXCLUDED.is_keto,
       is_gluten_free = EXCLUDED.is_gluten_free,

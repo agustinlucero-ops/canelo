@@ -1,9 +1,30 @@
+import { buildFlavorLineCartItem } from "../utils/flavorLineCart";
+
 export const cartInitialState = {
   items: [],
 };
 
 export function cartReducer(state, action) {
   switch (action.type) {
+    case "ADD_FLAVOR_LINE_ITEM": {
+      const { line, variant, presentation } = action.payload;
+      const nextItem = buildFlavorLineCartItem({ line, variant, presentation });
+      const existing = state.items.find((item) => item.key === nextItem.key);
+
+      if (existing) {
+        return {
+          ...state,
+          items: state.items.map((item) =>
+            item.key === nextItem.key ? { ...item, quantity: item.quantity + 1 } : item
+          ),
+        };
+      }
+
+      return {
+        ...state,
+        items: [...state.items, nextItem],
+      };
+    }
     case "ADD_ITEM": {
       const { product, presentation } = action.payload;
       const key = `${product.id}-${presentation.label}`;

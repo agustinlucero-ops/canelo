@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
+import GranolaLineCard from "./components/GranolaLineCard";
+import FlavorPickerPanel from "./components/FlavorPickerPanel";
 import CartAddToast from "./components/CartAddToast";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
@@ -35,14 +37,19 @@ import {
   isKetoFilterCategory,
   isVeganFilterCategory,
 } from "./utils/productCategories";
-import { sanitizeProducts } from "./utils/sanitizeCatalog";
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  PRODUCT_TYPE_FLAVOR_LINE,
+  sanitizeProducts,
+  sanitizeVariants,
+} from "./utils/sanitizeCatalog";
 import { CART_ADD_TOAST_MESSAGE } from "./utils/cartAddToast";
 import { createTimedNotice } from "./utils/timedNotice";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
-const PRODUCTS_DATA_VERSION = 12;
+const PRODUCTS_DATA_VERSION = 13;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
 const ENABLE_REMOTE_ADMIN_WRITES = import.meta.env.VITE_ENABLE_REMOTE_ADMIN_WRITES !== "false";
 
@@ -95,8 +102,18 @@ export default function App() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCartBadgeBumping, setIsCartBadgeBumping] = useState(false);
   const prevTotalItemsRef = useRef(0);
-  const { items, totals, addItem, setQuantity, removeItem, clearCart, reconcileWithCatalog } =
-    useCart();
+  const {
+    items,
+    totals,
+    addItem,
+    addFlavorLineItem,
+    setQuantity,
+    removeItem,
+    clearCart,
+    reconcileWithCatalog,
+  } = useCart();
+  const [activeFlavorLine, setActiveFlavorLine] = useState(null);
+  const [isFlavorPickerOpen, setFlavorPickerOpen] = useState(false);
   const [cartReconcileNotice, setCartReconcileNotice] = useState("");
   const [cartAddToastMessage, setCartAddToastMessage] = useState("");
   const cartAddNoticeRef = useRef(null);
@@ -118,6 +135,24 @@ export default function App() {
       cartAddNoticeRef.current?.show(CART_ADD_TOAST_MESSAGE);
     },
     [addItem]
+  );
+
+  const handleOpenFlavorPicker = useCallback((line) => {
+    setActiveFlavorLine(line);
+    setFlavorPickerOpen(true);
+  }, []);
+
+  const handleCloseFlavorPicker = useCallback(() => {
+    setFlavorPickerOpen(false);
+    setActiveFlavorLine(null);
+  }, []);
+
+  const handleAddFlavorLineToCart = useCallback(
+    (line, variant, presentation) => {
+      addFlavorLineItem(line, variant, presentation);
+      cartAddNoticeRef.current?.show(CART_ADD_TOAST_MESSAGE);
+    },
+    [addFlavorLineItem]
   );
 
   useEffect(() => {
@@ -172,7 +207,7 @@ export default function App() {
   const [editingProductDraft, setEditingProductDraft] = useState(null);
 
   const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
-  useBodyScrollLock(isCartOpen || isAdminModalOpen || isProductEditModalOpen);
+  useBodyScrollLock(isCartOpen || isFlavorPickerOpen || isAdminModalOpen || isProductEditModalOpen);
 
   const applyOfflineCatalog = useCallback(() => {
     const fallbackProducts = sanitizeProducts(initialProducts);
@@ -715,6 +750,7 @@ export default function App() {
       name: product.name,
       category: product.category,
       image: product.image,
+      productType: product.productType ?? "simple",
       isVegan: Boolean(product.isVegan),
       isKeto: Boolean(product.isKeto),
       isGlutenFree: Boolean(product.isGlutenFree),
@@ -722,6 +758,15 @@ export default function App() {
       presentations: product.presentations.map((presentation) => ({
         label: presentation.label,
         price: String(presentation.price),
+      })),
+      variants: (product.variants ?? []).map((variant) => ({
+        id: variant.id,
+        label: variant.label,
+        image: variant.image,
+        description: variant.description ?? "",
+        contentsText: (variant.contents ?? []).join("\n"),
+        isVegan: Boolean(variant.isVegan),
+        outOfStock: Boolean(variant.outOfStock),
       })),
     });
     setProductAdminError("");
@@ -775,6 +820,67 @@ export default function App() {
         ),
       };
     });
+  };
+
+  const handleEditVariantField = (index, field, value) => {
+    setEditingProductDraft((currentDraft) => {
+      if (!currentDraft) return currentDraft;
+      return {
+        ...currentDraft,
+        variants: (currentDraft.variants ?? []).map((variant, variantIndex) =>
+          variantIndex === index ? { ...variant, [field]: value } : variant
+        ),
+      };
+    });
+  };
+
+  const handleAddVariantToDraft = () => {
+    setEditingProductDraft((currentDraft) => {
+      if (!currentDraft) return currentDraft;
+      const nextIndex = (currentDraft.variants?.length ?? 0) + 1;
+      return {
+        ...currentDraft,
+        variants: [
+          ...(currentDraft.variants ?? []),
+          {
+            id: `${currentDraft.id}-sabor-${nextIndex}`,
+            label: "",
+            image: currentDraft.image,
+            description: "",
+            contentsText: "",
+            isVegan: false,
+            outOfStock: false,
+          },
+        ],
+      };
+    });
+  };
+
+  const handleRemoveVariantFromDraft = (index) => {
+    setEditingProductDraft((currentDraft) => {
+      if (!currentDraft || (currentDraft.variants?.length ?? 0) <= 1) return currentDraft;
+      return {
+        ...currentDraft,
+        variants: currentDraft.variants.filter((_, variantIndex) => variantIndex !== index),
+      };
+    });
+  };
+
+  const handleEditVariantImageFile = (index, event) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+
+    if (!selectedFile.type.startsWith("image/")) {
+      setProductAdminError("La foto debe ser un archivo de imagen.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleEditVariantField(index, "image", String(reader.result));
+      setProductAdminError("");
+    };
+    reader.readAsDataURL(selectedFile);
   };
 
   const handleEditProductImageFile = (event) => {
@@ -844,11 +950,35 @@ export default function App() {
       return;
     }
 
+    const isFlavorLine = editingProductDraft.productType === PRODUCT_TYPE_FLAVOR_LINE;
+    const sanitizedVariants = isFlavorLine
+      ? sanitizeVariants(
+          (editingProductDraft.variants ?? []).map((variant) => ({
+            id: variant.id,
+            label: variant.label,
+            image: variant.image,
+            description: variant.description,
+            contents: String(variant.contentsText ?? "")
+              .split("\n")
+              .map((entry) => entry.trim())
+              .filter(Boolean),
+            isVegan: variant.isVegan,
+            outOfStock: variant.outOfStock,
+          }))
+        )
+      : [];
+
+    if (isFlavorLine && !sanitizedVariants.length) {
+      setProductAdminError("Cargá al menos un sabor con nombre.");
+      return;
+    }
+
     const updatedProduct = {
       id: editingProductDraft.id,
       name: normalizedName,
       category: normalizedCategory,
       image: editingProductDraft.image.trim() || DEFAULT_PRODUCT_IMAGE,
+      productType: isFlavorLine ? PRODUCT_TYPE_FLAVOR_LINE : "simple",
       isVegan: Boolean(editingProductDraft.isVegan),
       isKeto: Boolean(editingProductDraft.isKeto),
       isGlutenFree:
@@ -859,6 +989,7 @@ export default function App() {
         label: presentation.label,
         price: Math.round(presentation.price),
       })),
+      variants: sanitizedVariants,
     };
 
     await withAdminPendingAction("update-product", async () => {
@@ -1279,9 +1410,21 @@ export default function App() {
               <section key={category} className="category-section">
                 <h2>{category}</h2>
                 <div className="product-grid">
-                  {categoryProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-                  ))}
+                  {categoryProducts.map((product) =>
+                    product.productType === PRODUCT_TYPE_FLAVOR_LINE ? (
+                      <GranolaLineCard
+                        key={product.id}
+                        line={product}
+                        onOpenFlavorPicker={handleOpenFlavorPicker}
+                      />
+                    ) : (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                      />
+                    )
+                  )}
                 </div>
               </section>
             ))}
@@ -1343,6 +1486,10 @@ export default function App() {
             onAddPresentationToDraft={handleAddPresentationToDraft}
             onRemovePresentationFromDraft={handleRemovePresentationFromDraft}
             onEditProductImageFile={handleEditProductImageFile}
+            onEditVariantField={handleEditVariantField}
+            onAddVariantToDraft={handleAddVariantToDraft}
+            onRemoveVariantFromDraft={handleRemoveVariantFromDraft}
+            onEditVariantImageFile={handleEditVariantImageFile}
             onSaveEditedProduct={handleSaveEditedProduct}
             onCancelEditProduct={handleCancelEditProduct}
             onDeleteProduct={handleDeleteProduct}
@@ -1380,6 +1527,13 @@ export default function App() {
         setQuantity={setQuantity}
         removeItem={removeItem}
         clearCart={clearCart}
+      />
+
+      <FlavorPickerPanel
+        isOpen={isFlavorPickerOpen}
+        line={activeFlavorLine}
+        onClose={handleCloseFlavorPicker}
+        onAddToCart={handleAddFlavorLineToCart}
       />
 
       {isAdminModalOpen && (

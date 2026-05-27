@@ -41,6 +41,8 @@ export function CartProvider({ children }) {
       totals,
       addItem: (product, presentation) =>
         dispatch({ type: "ADD_ITEM", payload: { product, presentation } }),
+      addFlavorLineItem: (line, variant, presentation) =>
+        dispatch({ type: "ADD_FLAVOR_LINE_ITEM", payload: { line, variant, presentation } }),
       setQuantity: (key, quantity) =>
         dispatch({ type: "SET_QUANTITY", payload: { key, quantity } }),
       removeItem: (key) => dispatch({ type: "REMOVE_ITEM", payload: { key } }),
