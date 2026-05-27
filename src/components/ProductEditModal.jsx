@@ -148,10 +148,10 @@ export default function ProductEditModal({
             </label>
             <input
               id="product-edit-image-url"
-              type="url"
+              type="text"
               value={draft.image}
               onChange={(event) => onEditProductField("image", event.target.value)}
-              placeholder="O pegá una URL de imagen"
+              placeholder="Ruta o URL de imagen (opcional)"
               disabled={isActionDisabled}
             />
           </div>

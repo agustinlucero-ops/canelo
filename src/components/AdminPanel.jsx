@@ -367,10 +367,10 @@ export default function AdminPanel({
             disabled={isActionDisabled}
           />
           <input
-            type="url"
+            type="text"
             value={newProductImage}
             onChange={(event) => onNewProductImageChange(event.target.value)}
-            placeholder="URL de foto (opcional)"
+            placeholder="Ruta o URL de foto (opcional)"
             disabled={isActionDisabled}
           />
           <input
