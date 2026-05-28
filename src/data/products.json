@@ -853,11 +853,26 @@
     "id": "mani-saborizado",
     "name": "Mani saborizado",
     "category": "Maní suelto",
+    "productType": "flavored",
     "image": "/images/products/mani.svg",
     "presentations": [
       {
         "label": "1kg",
         "price": 7500
+      }
+    ],
+    "variants": [
+      {
+        "id": "mani-saborizado-sabor-1",
+        "label": "Sabor 1",
+        "image": "/images/products/mani.svg",
+        "outOfStock": false
+      },
+      {
+        "id": "mani-saborizado-sabor-2",
+        "label": "Sabor 2",
+        "image": "/images/products/mani.svg",
+        "outOfStock": false
       }
     ]
   },

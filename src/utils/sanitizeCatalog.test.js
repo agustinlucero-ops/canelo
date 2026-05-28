@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { sanitizePresentations, sanitizeProducts } from "./sanitizeCatalog";
+import {
+  sanitizePresentations,
+  sanitizeProducts,
+  sanitizeShelfNote,
+} from "./sanitizeCatalog";
+
+describe("sanitizeShelfNote", () => {
+  it("truncates text longer than 50 characters", () => {
+    const longText = "a".repeat(60);
+    expect(sanitizeShelfNote(longText)).toHaveLength(50);
+    expect(sanitizeShelfNote(longText)).toBe("a".repeat(50));
+  });
+});
 
 describe("sanitizePresentations", () => {
   it("filters invalid entries and rounds prices", () => {
@@ -36,6 +48,36 @@ describe("sanitizeProducts", () => {
     });
     expect(product.name).toBeTruthy();
     expect(product.image).toContain("/images/");
+  });
+
+  it("keeps shelfNote on a simple product when provided", () => {
+    const [product] = sanitizeProducts([
+      {
+        id: "almendra",
+        name: "Almendra",
+        category: "Frutos secos",
+        shelfNote: "  sin piel  ",
+        presentations: [{ label: "1kg", price: 10000 }],
+      },
+    ]);
+
+    expect(product.shelfNote).toBe("sin piel");
+  });
+
+  it("drops shelfNote on flavor-line products", () => {
+    const [line] = sanitizeProducts([
+      {
+        id: "granola-cuca",
+        name: "Granola CUCA",
+        category: "Granolas",
+        productType: "flavor-line",
+        shelfNote: "no debería quedar",
+        presentations: [{ label: "1kg", price: 10300 }],
+        variants: [{ id: "cuca-tradicional", label: "Tradicional" }],
+      },
+    ]);
+
+    expect(line.shelfNote).toBeUndefined();
   });
 
   it("keeps a flavor-line with sanitized variants", () => {
@@ -75,5 +117,24 @@ describe("sanitizeProducts", () => {
       ],
     });
     expect(line.variants[0].image).toContain("/images/");
+  });
+
+  it("keeps a flavored product with sabores en tarjeta", () => {
+    const [product] = sanitizeProducts([
+      {
+        id: "mani-saborizado",
+        name: "Mani saborizado",
+        category: "Maní suelto",
+        productType: "flavored",
+        presentations: [{ label: "1kg", price: 7500 }],
+        variants: [{ id: "mani-bbq", label: "BBQ" }],
+      },
+    ]);
+
+    expect(product).toMatchObject({
+      id: "mani-saborizado",
+      productType: "flavored",
+      variants: [{ id: "mani-bbq", label: "BBQ" }],
+    });
   });
 });

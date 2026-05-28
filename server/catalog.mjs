@@ -1,9 +1,22 @@
 import { getSql } from "./db.mjs";
+import { categoriesReferencedByProducts } from "../src/utils/categoriesReferencedByProducts.js";
+import { normalizeCategoryLabel } from "../src/utils/catalogCategories.js";
+import { isShelfCategory } from "../src/utils/productCategories.js";
+import {
+  validateShelfCategoryReorder,
+  ValidationError,
+} from "../src/utils/validateShelfCategoryReorder.js";
+import { sanitizeShelfNote } from "../src/utils/sanitizeCatalog.js";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 const DEFAULT_CATEGORY = "Sin tacc";
 const PRODUCT_TYPE_SIMPLE = "simple";
 const PRODUCT_TYPE_FLAVOR_LINE = "flavor-line";
+const PRODUCT_TYPE_FLAVORED = "flavored";
+
+function productHasFlavorVariants(productType) {
+  return productType === PRODUCT_TYPE_FLAVOR_LINE || productType === PRODUCT_TYPE_FLAVORED;
+}
 const RESERVED_CATEGORY_NAMES = new Set(["veganos", "vegano", "keto", "apto keto"]);
 
 export class CatalogError extends Error {
@@ -46,7 +59,9 @@ function normalizePresentations(presentations) {
 
 function normalizeProductType(value) {
   const normalized = normalizeText(value) || PRODUCT_TYPE_SIMPLE;
-  return normalized === PRODUCT_TYPE_FLAVOR_LINE ? PRODUCT_TYPE_FLAVOR_LINE : PRODUCT_TYPE_SIMPLE;
+  if (normalized === PRODUCT_TYPE_FLAVOR_LINE) return PRODUCT_TYPE_FLAVOR_LINE;
+  if (normalized === PRODUCT_TYPE_FLAVORED) return PRODUCT_TYPE_FLAVORED;
+  return PRODUCT_TYPE_SIMPLE;
 }
 
 function normalizeVariants(variants) {
@@ -100,22 +115,62 @@ async function requireCategory(sql, categoryName) {
 }
 
 function mapProductRow(row) {
+  const productType = row.product_type ?? PRODUCT_TYPE_SIMPLE;
+  const shelfNote = sanitizeShelfNote(row.shelf_note);
   return {
     id: row.id,
     name: row.name,
     category: row.category,
     image: row.image,
-    productType: row.product_type ?? PRODUCT_TYPE_SIMPLE,
+    productType,
     presentations: row.presentations,
     variants: Array.isArray(row.variants) ? row.variants : [],
     isVegan: row.is_vegan,
     isKeto: row.is_keto,
     isGlutenFree: row.is_gluten_free,
     outOfStock: row.out_of_stock,
+    ...(productType === PRODUCT_TYPE_SIMPLE && shelfNote ? { shelfNote } : {}),
   };
 }
 
+export async function syncCategoriesFromProducts() {
+  const sql = getSql();
+  const productRows = await sql`
+    SELECT DISTINCT category
+    FROM products
+    WHERE category IS NOT NULL AND trim(category) <> ''
+  `;
+
+  const existingRows = await sql`SELECT name FROM categories`;
+  const missing = categoriesReferencedByProducts(
+    productRows.map((row) => ({ category: row.category })),
+    existingRows.map((row) => row.name)
+  );
+
+  if (!missing.length) {
+    return { created: [] };
+  }
+
+  const maxRows = await sql`SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order FROM categories`;
+  let nextSortOrder = Number(maxRows?.[0]?.max_sort_order ?? -1) + 1;
+  const created = [];
+
+  for (const name of missing) {
+    const normalizedName = normalizeText(name);
+    await sql`
+      INSERT INTO categories (name, sort_order)
+      VALUES (${normalizedName}, ${nextSortOrder})
+      ON CONFLICT (name) DO NOTHING
+    `;
+    created.push(normalizedName);
+    nextSortOrder += 1;
+  }
+
+  return { created };
+}
+
 export async function listCategories() {
+  await syncCategoriesFromProducts();
   const sql = getSql();
   const rows = await sql`
     SELECT name, sort_order
@@ -134,13 +189,13 @@ export async function listProducts({ category } = {}) {
 
   const rows = normalizedCategory
     ? await sql`
-        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations, shelf_note
         FROM products
         WHERE lower(category) = lower(${normalizedCategory})
         ORDER BY name ASC
       `
     : await sql`
-        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+        SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations, shelf_note
         FROM products
         ORDER BY category ASC, name ASC
       `;
@@ -151,7 +206,7 @@ export async function listProducts({ category } = {}) {
 export async function getProductById(id) {
   const sql = getSql();
   const rows = await sql`
-    SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    SELECT id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations, shelf_note
     FROM products
     WHERE id = ${id}
     LIMIT 1
@@ -218,6 +273,42 @@ export async function renameCategory({ currentName, nextName }) {
     name: rows[0].name,
     sortOrder: rows[0].sort_order,
   };
+}
+
+function categoryNameKey(value) {
+  return normalizeText(value).toLowerCase();
+}
+
+export async function reorderShelfCategories({ order }) {
+  const sql = getSql();
+  const categories = await listCategories();
+  const shelfNames = categories.filter((row) => isShelfCategory(row.name)).map((row) => row.name);
+
+  try {
+    validateShelfCategoryReorder(order, shelfNames);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      throw new CatalogError("invalid_category_order", err.message);
+    }
+    throw err;
+  }
+
+  const nameByKey = new Map(categories.map((row) => [categoryNameKey(row.name), row.name]));
+
+  for (let index = 0; index < order.length; index += 1) {
+    const label = normalizeCategoryLabel(String(order[index] ?? "").trim());
+    const dbName = nameByKey.get(categoryNameKey(label));
+    if (!dbName) {
+      throw new CatalogError("invalid_category_order", `La categoría "${label}" no existe.`);
+    }
+    await sql`
+      UPDATE categories
+      SET sort_order = ${index}
+      WHERE name = ${dbName}
+    `;
+  }
+
+  return listCategories();
 }
 
 export async function deleteCategory({ name }) {
@@ -318,9 +409,16 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
   if (!normalizedPresentations.length) {
     throw new CatalogError("invalid_presentations", "Debe haber al menos una presentación válida.");
   }
-  if (normalizedProductType === PRODUCT_TYPE_FLAVOR_LINE && !normalizedVariants.length) {
+  if (productHasFlavorVariants(normalizedProductType) && !normalizedVariants.length) {
     throw new CatalogError("invalid_variants", "Debe haber al menos un sabor válido.");
   }
+
+  const shelfNote =
+    normalizedProductType === PRODUCT_TYPE_SIMPLE
+      ? input?.shelfNote !== undefined
+        ? sanitizeShelfNote(input.shelfNote)
+        : sanitizeShelfNote(baseProduct?.shelfNote)
+      : "";
 
   return {
     name: normalizedName,
@@ -332,7 +430,8 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
     isGlutenFree: normalizedIsGlutenFree,
     outOfStock: normalizedOutOfStock,
     presentations: normalizedPresentations,
-    variants: normalizedProductType === PRODUCT_TYPE_FLAVOR_LINE ? normalizedVariants : [],
+    variants: productHasFlavorVariants(normalizedProductType) ? normalizedVariants : [],
+    shelfNote,
   };
 }
 
@@ -371,7 +470,8 @@ export async function createProduct(input) {
       is_keto,
       is_gluten_free,
       out_of_stock,
-      presentations
+      presentations,
+      shelf_note
     )
     VALUES (
       ${normalizedId},
@@ -384,9 +484,10 @@ export async function createProduct(input) {
       ${payload.isKeto},
       ${payload.isGlutenFree},
       ${payload.outOfStock},
-      ${presentationsJson}::jsonb
+      ${presentationsJson}::jsonb,
+      ${payload.shelfNote ?? ""}
     )
-    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations, shelf_note
   `;
   return mapProductRow(rows[0]);
 }
@@ -415,9 +516,10 @@ export async function updateProduct(id, input) {
       is_gluten_free = ${payload.isGlutenFree},
       out_of_stock = ${payload.outOfStock},
       presentations = ${presentationsJson}::jsonb,
+      shelf_note = ${payload.shelfNote ?? ""},
       updated_at = now()
     WHERE id = ${id}
-    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations
+    RETURNING id, name, category, image, product_type, variants, is_vegan, is_keto, is_gluten_free, out_of_stock, presentations, shelf_note
   `;
   return mapProductRow(rows[0]);
 }

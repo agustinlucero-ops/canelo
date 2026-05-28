@@ -1,7 +1,13 @@
 import { Trash2, X } from "lucide-react";
 import { formatPrice } from "../utils/whatsapp";
-import { PRODUCT_TYPE_FLAVOR_LINE } from "../utils/sanitizeCatalog";
+import {
+  PRODUCT_TYPE_FLAVORED,
+  PRODUCT_TYPE_FLAVOR_LINE,
+  SHELF_NOTE_MAX_LENGTH,
+} from "../utils/sanitizeCatalog";
 import FlavorLineEditModal from "./FlavorLineEditModal";
+import FlavoredProductEditModal from "./FlavoredProductEditModal";
+import ProductTitleBlock from "./ProductTitleBlock";
 
 function draftToPreviewProduct(draft) {
   const presentations = draft.presentations
@@ -23,6 +29,7 @@ function draftToPreviewProduct(draft) {
     isGlutenFree: Boolean(draft.isGlutenFree),
     outOfStock: Boolean(draft.outOfStock),
     presentations: presentations.length ? presentations : [{ label: "—", price: 1 }],
+    shelfNote: String(draft.shelfNote ?? "").trim(),
   };
 }
 
@@ -44,6 +51,28 @@ export default function ProductEditModal({
   isActionDisabled = false,
   isSaving = false,
 }) {
+  if (draft?.productType === PRODUCT_TYPE_FLAVORED) {
+    return (
+      <FlavoredProductEditModal
+        draft={draft}
+        productCategoryOptions={productCategoryOptions}
+        productAdminError={productAdminError}
+        onClose={onClose}
+        onSave={onSave}
+        onEditProductField={onEditProductField}
+        onEditProductPresentationField={onEditProductPresentationField}
+        onAddPresentationToDraft={onAddPresentationToDraft}
+        onRemovePresentationFromDraft={onRemovePresentationFromDraft}
+        onEditVariantField={onEditVariantField}
+        onAddVariantToDraft={onAddVariantToDraft}
+        onRemoveVariantFromDraft={onRemoveVariantFromDraft}
+        onEditProductImageFile={onEditProductImageFile}
+        isActionDisabled={isActionDisabled}
+        isSaving={isSaving}
+      />
+    );
+  }
+
   if (draft?.productType === PRODUCT_TYPE_FLAVOR_LINE) {
     return (
       <FlavorLineEditModal
@@ -114,6 +143,11 @@ export default function ProductEditModal({
               className="product-edit-preview-image"
             />
             <div className="product-edit-preview-copy">
+              <ProductTitleBlock
+                name={previewProduct.name}
+                category={previewProduct.category}
+                shelfNote={previewProduct.shelfNote}
+              />
               <p className="product-edit-preview-note">Vista previa en catálogo</p>
               <p className="product-edit-preview-price">
                 {formatPrice(previewProduct.presentations[0].price)}
@@ -141,6 +175,18 @@ export default function ProductEditModal({
             value={draft.name}
             onChange={(event) => onEditProductField("name", event.target.value)}
             placeholder="Nombre del producto"
+            disabled={isActionDisabled}
+          />
+          <label className="field-label" htmlFor="product-edit-shelf-note">
+            Aclaración (opcional)
+          </label>
+          <input
+            id="product-edit-shelf-note"
+            type="text"
+            value={draft.shelfNote ?? ""}
+            onChange={(event) => onEditProductField("shelfNote", event.target.value)}
+            placeholder="ej. sin piel, orgánico"
+            maxLength={SHELF_NOTE_MAX_LENGTH}
             disabled={isActionDisabled}
           />
           <label className="field-label" htmlFor="product-edit-category">

@@ -1,4 +1,4 @@
-import { PRODUCT_TYPE_FLAVOR_LINE } from "./sanitizeCatalog";
+import { productHasFlavorVariants } from "./sanitizeCatalog";
 
 function buildCatalogIndexes(products) {
   const productById = new Map();
@@ -6,7 +6,7 @@ function buildCatalogIndexes(products) {
 
   for (const product of products) {
     productById.set(product.id, product);
-    if (product.productType !== PRODUCT_TYPE_FLAVOR_LINE || !Array.isArray(product.variants)) {
+    if (!productHasFlavorVariants(product.productType) || !Array.isArray(product.variants)) {
       continue;
     }
 

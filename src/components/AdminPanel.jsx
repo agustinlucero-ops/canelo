@@ -1,9 +1,12 @@
-import { Check, ChevronDown, Pencil, Trash2, Vegan, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Pencil, Trash2, Vegan, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchOrders } from "../api/orders";
 import CollapsibleSection from "./CollapsibleSection";
 import ProductEditModal from "./ProductEditModal";
 import CatalogImportPanel from "./CatalogImportPanel";
+import AdminPresentationsFields from "./AdminPresentationsFields";
+import AdminVariantsFields from "./AdminVariantsFields";
+import { productHasFlavorVariants } from "../utils/sanitizeCatalog";
 import { formatPrice } from "../utils/whatsapp";
 
 function formatPresentationsSummary(presentations) {
@@ -70,8 +73,126 @@ function ProductListItem({ product, onStartEditProduct, onDeleteProduct, isActio
   );
 }
 
+function CategoryAdminRow({
+  category,
+  categoryProductCount,
+  normalizeCategoryName,
+  editingCategory,
+  editingCategoryValue,
+  onEditingCategoryValueChange,
+  onSaveCategory,
+  onCancelEditCategory,
+  onStartEditCategory,
+  onDeleteCategory,
+  isActionDisabled,
+  isMutating,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+  showReorder,
+  showEdit,
+}) {
+  if (editingCategory === category) {
+    return (
+      <li className="category-list-item">
+        <div className="category-edit-grid">
+          <input
+            type="text"
+            value={editingCategoryValue}
+            onChange={(event) => onEditingCategoryValueChange(event.target.value)}
+            disabled={isActionDisabled}
+          />
+          <div className="category-item-actions">
+            <button
+              className="admin-icon-button admin-icon-button-primary"
+              type="button"
+              onClick={() => onSaveCategory(category)}
+              aria-label={`Guardar categoría ${category}`}
+              disabled={isActionDisabled}
+            >
+              <Check aria-hidden="true" />
+            </button>
+            <button
+              className="admin-icon-button"
+              type="button"
+              onClick={onCancelEditCategory}
+              aria-label="Cancelar edición"
+              disabled={isMutating}
+            >
+              <X aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="category-list-item">
+      <div className="category-item-content">
+        <div className="category-item-main">
+          <span>{category}</span>
+          <small>
+            {categoryProductCount[normalizeCategoryName(category)] ?? 0} productos
+          </small>
+        </div>
+        <div className="category-item-actions">
+          {showReorder && (
+            <>
+              <button
+                className="admin-icon-button"
+                type="button"
+                onClick={onMoveUp}
+                aria-label={`Subir categoría ${category}`}
+                disabled={isActionDisabled || !canMoveUp}
+              >
+                <ChevronUp aria-hidden="true" />
+              </button>
+              <button
+                className="admin-icon-button"
+                type="button"
+                onClick={onMoveDown}
+                aria-label={`Bajar categoría ${category}`}
+                disabled={isActionDisabled || !canMoveDown}
+              >
+                <ChevronDown aria-hidden="true" />
+              </button>
+            </>
+          )}
+          {showEdit && (
+            <>
+              <button
+                className="admin-icon-button"
+                type="button"
+                onClick={() => onStartEditCategory(category)}
+                aria-label={`Editar categoría ${category}`}
+                disabled={isActionDisabled}
+              >
+                <Pencil aria-hidden="true" />
+              </button>
+              <button
+                className="admin-icon-button admin-icon-button-danger"
+                type="button"
+                onClick={() => onDeleteCategory(category)}
+                aria-label={`Eliminar categoría ${category}`}
+                disabled={isActionDisabled}
+              >
+                <Trash2 aria-hidden="true" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export default function AdminPanel({
   allCategories,
+  storeFilterCategories,
+  shelfCategories,
+  onMoveShelfCategory,
   productCategoryOptions,
   categoryProductCount,
   adminGroupedProducts,
@@ -96,12 +217,21 @@ export default function AdminPanel({
   onDeleteCategory,
   newProductName,
   onNewProductNameChange,
+  newProductShelfNote,
+  onNewProductShelfNoteChange,
+  newProductType,
+  onNewProductTypeChange,
   newProductCategory,
   onNewProductCategoryChange,
-  newProductPresentation,
+  newProductPresentations,
   onNewProductPresentationChange,
-  newProductPrice,
-  onNewProductPriceChange,
+  onAddNewProductPresentation,
+  onRemoveNewProductPresentation,
+  newProductVariants,
+  onNewProductVariantChange,
+  onAddNewProductVariant,
+  onRemoveNewProductVariant,
+  onNewProductVariantImageFile,
   newProductImage,
   onNewProductImageChange,
   newProductIsVegan,
@@ -254,71 +384,67 @@ export default function AdminPanel({
           </form>
           {categoryAdminError && <p className="admin-error">{categoryAdminError}</p>}
 
-          <ul className="category-list">
-            {allCategories.map((category) => (
-              <li key={category} className="category-list-item">
-                {editingCategory === category ? (
-                  <div className="category-edit-grid">
-                    <input
-                      type="text"
-                      value={editingCategoryValue}
-                      onChange={(event) => onEditingCategoryValueChange(event.target.value)}
-                      disabled={isActionDisabled}
-                    />
-                    <div className="category-item-actions">
-                      <button
-                        className="admin-icon-button admin-icon-button-primary"
-                        type="button"
-                        onClick={() => onSaveCategory(category)}
-                        aria-label={`Guardar categoría ${category}`}
-                        disabled={isActionDisabled}
-                      >
-                        <Check aria-hidden="true" />
-                      </button>
-                      <button
-                        className="admin-icon-button"
-                        type="button"
-                        onClick={onCancelEditCategory}
-                        aria-label="Cancelar edición"
-                        disabled={isMutating}
-                      >
-                        <X aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="category-item-content">
-                    <div className="category-item-main">
-                      <span>{category}</span>
-                      <small>
-                        {categoryProductCount[normalizeCategoryName(category)] ?? 0} productos
-                      </small>
-                    </div>
-                    <div className="category-item-actions">
-                      <button
-                        className="admin-icon-button"
-                        type="button"
-                        onClick={() => onStartEditCategory(category)}
-                        aria-label={`Editar categoría ${category}`}
-                        disabled={isActionDisabled}
-                      >
-                        <Pencil aria-hidden="true" />
-                      </button>
-                      <button
-                        className="admin-icon-button admin-icon-button-danger"
-                        type="button"
-                        onClick={() => onDeleteCategory(category)}
-                        aria-label={`Eliminar categoría ${category}`}
-                        disabled={isActionDisabled}
-                      >
-                        <Trash2 aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          {storeFilterCategories.length > 0 && (
+            <div className="category-admin-block">
+              <h3 className="category-admin-block-title">Filtros de tienda</h3>
+              <p className="category-admin-block-hint">
+                Siempre aparecen primero en el catálogo. No se reordenan.
+              </p>
+              <ul className="category-list">
+                {storeFilterCategories.map((category) => (
+                  <CategoryAdminRow
+                    key={category}
+                    category={category}
+                    categoryProductCount={categoryProductCount}
+                    normalizeCategoryName={normalizeCategoryName}
+                    editingCategory={editingCategory}
+                    editingCategoryValue={editingCategoryValue}
+                    onEditingCategoryValueChange={onEditingCategoryValueChange}
+                    onSaveCategory={onSaveCategory}
+                    onCancelEditCategory={onCancelEditCategory}
+                    onStartEditCategory={onStartEditCategory}
+                    onDeleteCategory={onDeleteCategory}
+                    isActionDisabled={isActionDisabled}
+                    isMutating={isMutating}
+                    showReorder={false}
+                    showEdit={false}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="category-admin-block">
+            <h3 className="category-admin-block-title">Categorías de estante</h3>
+            <p className="category-admin-block-hint">
+              Orden en el catálogo cuando el cliente ve «Todas».
+            </p>
+            <ul className="category-list">
+              {shelfCategories.map((category, index) => (
+                <CategoryAdminRow
+                  key={category}
+                  category={category}
+                  categoryProductCount={categoryProductCount}
+                  normalizeCategoryName={normalizeCategoryName}
+                  editingCategory={editingCategory}
+                  editingCategoryValue={editingCategoryValue}
+                  onEditingCategoryValueChange={onEditingCategoryValueChange}
+                  onSaveCategory={onSaveCategory}
+                  onCancelEditCategory={onCancelEditCategory}
+                  onStartEditCategory={onStartEditCategory}
+                  onDeleteCategory={onDeleteCategory}
+                  isActionDisabled={isActionDisabled}
+                  isMutating={isMutating}
+                  showReorder
+                  showEdit
+                  canMoveUp={index > 0}
+                  canMoveDown={index < shelfCategories.length - 1}
+                  onMoveUp={() => onMoveShelfCategory(category, -1)}
+                  onMoveDown={() => onMoveShelfCategory(category, 1)}
+                />
+              ))}
+            </ul>
+          </div>
         </div>
       </CollapsibleSection>
 
@@ -342,6 +468,36 @@ export default function AdminPanel({
             placeholder="Nombre del producto"
             disabled={isActionDisabled}
           />
+          {newProductType === "simple" && (
+            <>
+              <label className="field-label" htmlFor="new-product-shelf-note">
+                Aclaración (opcional)
+              </label>
+              <input
+                id="new-product-shelf-note"
+                type="text"
+                value={newProductShelfNote}
+                onChange={(event) => onNewProductShelfNoteChange(event.target.value)}
+                placeholder="ej. sin piel, orgánico"
+                maxLength={50}
+                disabled={isActionDisabled}
+              />
+            </>
+          )}
+          <label className="field-label" htmlFor="new-product-type">
+            Tipo de producto
+          </label>
+          <select
+            id="new-product-type"
+            className="select-field"
+            value={newProductType}
+            onChange={(event) => onNewProductTypeChange(event.target.value)}
+            disabled={isActionDisabled}
+          >
+            <option value="simple">Producto simple</option>
+            <option value="flavor-line">Línea de producto (granola)</option>
+            <option value="flavored">Producto con sabores (maní)</option>
+          </select>
           <select
             className="select-field"
             value={newProductCategory}
@@ -354,22 +510,29 @@ export default function AdminPanel({
               </option>
             ))}
           </select>
-          <input
-            type="text"
-            value={newProductPresentation}
-            onChange={(event) => onNewProductPresentationChange(event.target.value)}
-            placeholder="Presentación (ej. 500g)"
+          <AdminPresentationsFields
+            presentations={newProductPresentations}
+            onPresentationChange={onNewProductPresentationChange}
+            onAddPresentation={onAddNewProductPresentation}
+            onRemovePresentation={onRemoveNewProductPresentation}
             disabled={isActionDisabled}
+            heading={
+              productHasFlavorVariants(newProductType)
+                ? "Presentaciones y precios (compartidas por sabores)"
+                : "Presentaciones y precios"
+            }
           />
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={newProductPrice}
-            onChange={(event) => onNewProductPriceChange(event.target.value)}
-            placeholder="Precio"
-            disabled={isActionDisabled}
-          />
+          {productHasFlavorVariants(newProductType) && (
+            <AdminVariantsFields
+              variants={newProductVariants}
+              productType={newProductType}
+              onVariantChange={onNewProductVariantChange}
+              onVariantImageFile={onNewProductVariantImageFile}
+              onAddVariant={onAddNewProductVariant}
+              onRemoveVariant={onRemoveNewProductVariant}
+              disabled={isActionDisabled}
+            />
+          )}
           <input
             type="text"
             value={newProductImage}

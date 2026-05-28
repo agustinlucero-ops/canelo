@@ -37,16 +37,32 @@ Aviso breve y visible que confirma al cliente que un producto entró al carrito.
 _Avoid_: Toast, snackbar, notificación push
 
 **Línea de producto**:
-Ítem del catálogo en línea que agrupa varios sabores bajo una misma marca o familia (ej. Granola CUCA).
+Ítem del catálogo en línea que agrupa varios sabores bajo una marca o familia (ej. Granola CUCA). El cliente abre el panel de sabores desde la tarjeta.
 _Avoid_: Producto padre, combo, familia
 
+**Producto con sabores**:
+Ítem del estante con un solo nombre y varios sabores elegibles en la tarjeta (ej. Maní saborizado). No es línea de producto.
+_Avoid_: Variante, subproducto
+
 **Sabor**:
-Opción elegible dentro de una línea; tiene foto, descripción y lista de contenido propios.
+Opción elegible dentro de una línea o de un producto con sabores.
 _Avoid_: Variante, presentación, subproducto
+
+**Aclaración de estante**:
+Texto corto opcional bajo el nombre en la tarjeta de un producto simple del catálogo en línea.
+_Avoid_: Subtítulo, descripción (no confundir con textos largos del **Sabor** en paneles de sabores)
 
 **Tipo de archivo**:
 Elección explícita al importar: catálogo completo (comparar con la tienda) o solo productos nuevos (agregar filas del archivo).
 _Avoid_: Modo, estrategia de diff
+
+**Categoría de estante**:
+Categoría donde vive un producto en el catálogo en línea (ej. Granolas, Frutos secos). El dueño puede cambiar el orden en que aparecen en la tienda.
+_Avoid_: Sección, familia, rubro
+
+**Filtro de tienda**:
+Entrada del listado horizontal que agrupa productos por un criterio transversal (Sin tacc, Keto, Veganos), no por estante. Siempre va al inicio del catálogo; no se reordena con los estantes.
+_Avoid_: Chip, tag, badge (como sustantivo de catálogo)
 
 ## Relationships
 
@@ -55,7 +71,10 @@ _Avoid_: Modo, estrategia de diff
 - Un **Producto existente** se identifica por nombre normalizado (sin acentos, minúsculas)
 - Los clientes solo ven el **Catálogo en línea**, nunca un **Borrador**
 - Agregar un producto desde una tarjeta dispara una **Confirmación de agregado** y actualiza el **Carrito**
-- Una **Línea de producto** tiene uno o más **Sabores**; el cliente agrega al **Carrito** un **Sabor** concreto de esa línea
+- Una **Línea de producto** tiene uno o más **Sabores**; el cliente los explora en un panel y agrega al **Carrito** un **Sabor** concreto
+- Un **Producto con sabores** tiene uno o más **Sabores**; el cliente elige **Sabor** en la tarjeta y agrega al **Carrito**
+- Un producto simple puede tener cero o una **Aclaración de estante**; no aplica a **Líneas de producto** ni a **Productos con sabores**
+- El orden visible del **Catálogo en línea** combina **Filtros de tienda** fijos y **Categorías de estante** ordenadas por el dueño; si un producto usa una categoría que aún no estaba en la tabla, el sistema la registra automáticamente al final
 
 ## Example dialogue
 

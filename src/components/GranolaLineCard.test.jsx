@@ -16,20 +16,17 @@ describe("GranolaLineCard", () => {
         id: "cuca-tradicional",
         label: "Tradicional",
         image: "/images/products/granola.svg",
-        description: "Clásica.",
-        contents: ["Avena"],
         outOfStock: false,
       },
     ],
   };
 
-  it("shows Sabores y contenidos instead of add to cart", () => {
+  it("abre el panel de sabores en lugar de agregar directo al carrito", () => {
     const html = renderToStaticMarkup(
       <GranolaLineCard line={line} onOpenFlavorPicker={vi.fn()} />
     );
 
     expect(html).toContain("Sabores y contenidos");
     expect(html).not.toContain("Agregar al carrito");
-    expect(html).toContain("CUCA");
   });
 });

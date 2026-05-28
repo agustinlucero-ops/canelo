@@ -11,6 +11,7 @@ import {
   listCategories,
   listProducts,
   renameCategory,
+  reorderShelfCategories,
   updateProduct,
 } from "./catalog.mjs";
 import {
@@ -68,6 +69,7 @@ function sendApiError(res, err, defaultCode = "internal_error", defaultMessage =
       product_not_found: 404,
       category_conflict: 409,
       product_conflict: 409,
+      invalid_category_order: 400,
     };
     const statusCode = statusByCode[err.code] ?? 400;
     res.status(statusCode).json({
@@ -211,6 +213,18 @@ app.post("/api/categories", requireAdminAuth, async (req, res) => {
   } catch (err) {
     console.error("[api/categories#create]", { ...actionMeta, result: "error", err });
     sendApiError(res, err, "db_error", "No se pudo crear la categoría.");
+  }
+});
+
+app.put("/api/categories/order", requireAdminAuth, async (req, res) => {
+  const actionMeta = buildAuditMeta(req, { action: "reorder_categories" });
+  try {
+    const categories = await reorderShelfCategories({ order: req.body?.order });
+    console.info("[audit]", { ...actionMeta, result: "ok", count: categories.length });
+    res.json({ categories });
+  } catch (err) {
+    console.error("[api/categories#reorder]", { ...actionMeta, result: "error", err });
+    sendApiError(res, err, "db_error", "No se pudo guardar el orden de categorías.");
   }
 });
 

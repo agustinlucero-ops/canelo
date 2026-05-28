@@ -81,6 +81,16 @@ export async function createCategory(name) {
   return payload.category;
 }
 
+export async function reorderShelfCategories(order) {
+  const payload = await requestJson("/api/categories/order", {
+    method: "PUT",
+    body: { order },
+    fallbackCode: "category_reorder_failed",
+    fallbackMessage: "No se pudo guardar el orden de categorías.",
+  });
+  return payload.categories ?? [];
+}
+
 export async function renameCategory(currentName, nextName) {
   const payload = await requestJson(`/api/categories/${encodeURIComponent(currentName)}`, {
     method: "PUT",

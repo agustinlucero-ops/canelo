@@ -34,7 +34,8 @@ async function upsertProduct(sql, product) {
       is_keto,
       is_gluten_free,
       out_of_stock,
-      presentations
+      presentations,
+      shelf_note
     )
     VALUES (
       ${product.id},
@@ -47,7 +48,8 @@ async function upsertProduct(sql, product) {
       ${product.isKeto},
       ${product.isGlutenFree},
       ${product.outOfStock},
-      ${presentationsJson}::jsonb
+      ${presentationsJson}::jsonb,
+      ${product.shelfNote ?? ""}
     )
     ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name,
@@ -60,6 +62,7 @@ async function upsertProduct(sql, product) {
       is_gluten_free = EXCLUDED.is_gluten_free,
       out_of_stock = EXCLUDED.out_of_stock,
       presentations = EXCLUDED.presentations,
+      shelf_note = EXCLUDED.shelf_note,
       updated_at = now()
   `;
 }

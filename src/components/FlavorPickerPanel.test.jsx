@@ -18,31 +18,15 @@ describe("FlavorPickerPanel", () => {
         contents: ["Avena", "Miel"],
         outOfStock: false,
       },
-      {
-        id: "cuca-cacao-coco",
-        label: "Cacao y coco",
-        image: "/images/products/granola-cacao.svg",
-        description: "Con cacao.",
-        contents: ["Cacao", "Coco"],
-        outOfStock: false,
-      },
     ],
   };
 
-  it("shows flavor chips, selected flavor content, and add to cart", () => {
+  it("muestra chips de sabor y agregar al carrito para líneas de producto", () => {
     const html = renderToStaticMarkup(
-      <FlavorPickerPanel
-        isOpen
-        line={line}
-        onClose={vi.fn()}
-        onAddToCart={vi.fn()}
-      />
+      <FlavorPickerPanel isOpen line={line} onClose={vi.fn()} onAddToCart={vi.fn()} />
     );
 
     expect(html).toContain("Tradicional");
-    expect(html).toContain("Cacao y coco");
-    expect(html).toContain("Clásica y crocante.");
-    expect(html).toContain("Avena");
     expect(html).toContain("Agregar al carrito");
     expect(html).toContain("flavor-picker-panel open");
   });

@@ -2,6 +2,7 @@ import { Vegan } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
+import ProductTitleBlock from "./ProductTitleBlock";
 import { normalizeProductName } from "../utils/productName";
 
 export default function ProductCard({ product, onAddToCart, preview = false }) {
@@ -63,7 +64,11 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
         {product.outOfStock && <span className="stock-badge product-stock-badge">Sin stock</span>}
       </div>
       <div className="product-content">
-        <h3>{displayName}</h3>
+        <ProductTitleBlock
+          name={product.name}
+          category={product.category}
+          shelfNote={product.shelfNote}
+        />
         <p className="product-price">{formatPrice(currentPresentation.price)}</p>
 
         <QuantitySelector

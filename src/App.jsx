@@ -3,16 +3,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
 import GranolaLineCard from "./components/GranolaLineCard";
+import FlavorLineCard from "./components/FlavorLineCard";
 import FlavorPickerPanel from "./components/FlavorPickerPanel";
 import CartAddToast from "./components/CartAddToast";
 import CartDrawer from "./components/CartDrawer";
 import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import { fetchCatalogFromApi } from "./api/catalog";
-import {
-  clearCatalogLocalStorage,
-  mergeOrderedCategories,
-} from "./utils/catalogCategories";
+import { clearCatalogLocalStorage } from "./utils/catalogCategories";
+import { buildDisplayCategoryOrder } from "./utils/buildDisplayCategoryOrder";
 import {
   clearAdminToken,
   loginAdmin,
@@ -25,6 +24,7 @@ import {
   deleteCategory as deleteCategoryApi,
   deleteProduct as deleteProductApi,
   renameCategory as renameCategoryApi,
+  reorderShelfCategories as reorderShelfCategoriesApi,
   updateProduct as updateProductApi,
 } from "./api/adminCatalog";
 import initialProducts from "./data/products.json";
@@ -35,21 +35,34 @@ import {
   getProductCategoryOptions,
   isGlutenFreeFilterCategory,
   isKetoFilterCategory,
+  isShelfCategory,
+  isStoreFilterCategory,
   isVeganFilterCategory,
 } from "./utils/productCategories";
 import {
   DEFAULT_PRODUCT_IMAGE,
+  PRODUCT_TYPE_FLAVORED,
   PRODUCT_TYPE_FLAVOR_LINE,
+  productHasFlavorVariants,
+  sanitizePresentations,
   sanitizeProducts,
+  sanitizeShelfNote,
   sanitizeVariants,
 } from "./utils/sanitizeCatalog";
+import {
+  createDefaultNewProductPresentations,
+  createDefaultNewProductVariant,
+  createDefaultNewProductVariants,
+} from "./utils/adminNewProductDefaults";
+import { validateAdminNewProduct } from "./utils/validateAdminNewProduct";
 import { CART_ADD_TOAST_MESSAGE } from "./utils/cartAddToast";
 import { createTimedNotice } from "./utils/timedNotice";
+import { buildAdminNewProduct } from "./utils/buildAdminNewProduct";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
 const PRODUCTS_VERSION_STORAGE_KEY = "canelo.products-version";
-const PRODUCTS_DATA_VERSION = 13;
+const PRODUCTS_DATA_VERSION = 16;
 const ADMIN_SESSION_STORAGE_KEY = "canelo.admin-session";
 const ENABLE_REMOTE_ADMIN_WRITES = import.meta.env.VITE_ENABLE_REMOTE_ADMIN_WRITES !== "false";
 
@@ -169,7 +182,7 @@ export default function App() {
     prevTotalItemsRef.current = totals.totalItems;
   }, [totals.totalItems]);
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categoryRows, setCategoryRows] = useState([]);
   const [newCategory, setNewCategory] = useState("");
   const [categoryAdminError, setCategoryAdminError] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
@@ -191,13 +204,17 @@ export default function App() {
   const [isCategoryToolsOpen, setIsCategoryToolsOpen] = useState(false);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [newProductName, setNewProductName] = useState("");
+  const [newProductShelfNote, setNewProductShelfNote] = useState("");
   const [newProductCategory, setNewProductCategory] = useState("Sin tacc");
-  const [newProductPresentation, setNewProductPresentation] = useState("1kg");
-  const [newProductPrice, setNewProductPrice] = useState("");
+  const [newProductPresentations, setNewProductPresentations] = useState(
+    createDefaultNewProductPresentations
+  );
+  const [newProductVariants, setNewProductVariants] = useState([]);
   const [newProductIsVegan, setNewProductIsVegan] = useState(false);
   const [newProductIsKeto, setNewProductIsKeto] = useState(false);
   const [newProductIsGlutenFree, setNewProductIsGlutenFree] = useState(false);
   const [newProductImage, setNewProductImage] = useState("");
+  const [newProductType, setNewProductType] = useState("simple");
   const [productAdminError, setProductAdminError] = useState("");
   const [adminPendingAction, setAdminPendingAction] = useState("");
   const [isCatalogApiAvailable, setIsCatalogApiAvailable] = useState(false);
@@ -209,19 +226,37 @@ export default function App() {
   const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
   useBodyScrollLock(isCartOpen || isFlavorPickerOpen || isAdminModalOpen || isProductEditModalOpen);
 
+  const newProductDraftId = useMemo(
+    () => slugify(newProductName.trim()) || "producto-nuevo",
+    [newProductName]
+  );
+
+  useEffect(() => {
+    if (!productHasFlavorVariants(newProductType)) {
+      setNewProductVariants([]);
+      return;
+    }
+    setNewProductVariants((current) =>
+      current.length
+        ? current
+        : createDefaultNewProductVariants(
+            newProductDraftId,
+            newProductImage.trim() || DEFAULT_PRODUCT_IMAGE
+          )
+    );
+  }, [newProductDraftId, newProductImage, newProductType]);
+
   const applyOfflineCatalog = useCallback(() => {
     const fallbackProducts = sanitizeProducts(initialProducts);
     setProducts(fallbackProducts);
-    setCategories(
-      mergeOrderedCategories([], fallbackProducts, DEFAULT_CATEGORIES)
-    );
+    setCategoryRows([]);
     return fallbackProducts.length > 0;
   }, []);
 
   const mergeApiCatalogInState = useCallback(({ categories: apiCategories, products: apiProducts }) => {
     const sanitizedProducts = sanitizeProducts(apiProducts);
     setProducts(sanitizedProducts);
-    setCategories(mergeOrderedCategories(apiCategories, sanitizedProducts, DEFAULT_CATEGORIES));
+    setCategoryRows(apiCategories);
     return sanitizedProducts.length > 0 || apiCategories.length > 0;
   }, []);
 
@@ -289,8 +324,8 @@ export default function App() {
 
   useEffect(() => {
     if (isCatalogApiAvailable) return;
-    window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categories));
-  }, [categories, isCatalogApiAvailable]);
+    window.localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(categoryRows));
+  }, [categoryRows, isCatalogApiAvailable]);
 
   useEffect(() => {
     if (isCatalogApiAvailable) return;
@@ -330,12 +365,22 @@ export default function App() {
 
   const allCategories = useMemo(
     () =>
-      mergeOrderedCategories(
-        categories.map((name, index) => ({ name, sortOrder: index })),
+      buildDisplayCategoryOrder({
+        apiCategories: categoryRows,
         products,
-        DEFAULT_CATEGORIES
-      ),
-    [categories, products]
+        fallbackOrder: DEFAULT_CATEGORIES,
+      }),
+    [categoryRows, products]
+  );
+
+  const storeFilterCategories = useMemo(
+    () => allCategories.filter((category) => isStoreFilterCategory(category)),
+    [allCategories]
+  );
+
+  const shelfCategories = useMemo(
+    () => allCategories.filter((category) => isShelfCategory(category)),
+    [allCategories]
   );
 
   const productCategoryOptions = useMemo(
@@ -620,6 +665,28 @@ export default function App() {
     });
   };
 
+  const handleMoveShelfCategory = async (categoryName, delta) => {
+    if (!ensureCatalogApiWritable()) return;
+
+    const currentOrder = [...shelfCategories];
+    const index = currentOrder.indexOf(categoryName);
+    if (index < 0) return;
+
+    const nextIndex = index + delta;
+    if (nextIndex < 0 || nextIndex >= currentOrder.length) return;
+
+    const nextOrder = [...currentOrder];
+    [nextOrder[index], nextOrder[nextIndex]] = [nextOrder[nextIndex], nextOrder[index]];
+
+    setCategoryAdminError("");
+    await withAdminPendingAction("reorder-categories", async () => {
+      await reorderShelfCategoriesApi(nextOrder);
+      await refreshCatalogFromApi({ showRefreshing: true });
+    }).catch((err) => {
+      setCategoryAdminError(err?.message || "No se pudo guardar el orden de categorías.");
+    });
+  };
+
   const handleNewProductImageFile = (event) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
@@ -637,43 +704,113 @@ export default function App() {
     reader.readAsDataURL(selectedFile);
   };
 
+  const handleNewProductPresentationChange = (index, field, value) => {
+    setNewProductPresentations((current) =>
+      current.map((presentation, presentationIndex) =>
+        presentationIndex === index ? { ...presentation, [field]: value } : presentation
+      )
+    );
+  };
+
+  const handleAddNewProductPresentation = () => {
+    setNewProductPresentations((current) => [...current, { label: "", price: "" }]);
+  };
+
+  const handleRemoveNewProductPresentation = (index) => {
+    setNewProductPresentations((current) =>
+      current.length === 1 ? current : current.filter((_, presentationIndex) => presentationIndex !== index)
+    );
+  };
+
+  const handleNewProductVariantChange = (index, field, value) => {
+    setNewProductVariants((current) =>
+      current.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, [field]: value } : variant
+      )
+    );
+  };
+
+  const handleAddNewProductVariant = () => {
+    setNewProductVariants((current) => [
+      ...current,
+      createDefaultNewProductVariant(
+        newProductDraftId,
+        newProductImage.trim() || DEFAULT_PRODUCT_IMAGE,
+        current.length + 1
+      ),
+    ]);
+  };
+
+  const handleRemoveNewProductVariant = (index) => {
+    setNewProductVariants((current) =>
+      current.length === 1 ? current : current.filter((_, variantIndex) => variantIndex !== index)
+    );
+  };
+
+  const handleNewProductVariantImageFile = (index, event) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setNewProductVariants((current) =>
+        current.map((variant, variantIndex) =>
+          variantIndex === index ? { ...variant, image: String(reader.result) } : variant
+        )
+      );
+      setProductAdminError("");
+    };
+    reader.readAsDataURL(selectedFile);
+  };
+
   const handleAddProduct = async () => {
     if (!ensureCatalogApiWritable()) return;
 
     const normalizedName = newProductName.trim();
     const normalizedCategory = normalizeCategoryName(newProductCategory || "");
-    const normalizedPresentation = newProductPresentation.trim();
-    const normalizedPrice = normalizePriceValue(newProductPrice);
-
-    if (!normalizedName) {
-      setProductAdminError("Completá el nombre del producto.");
-      return;
-    }
-
-    if (!normalizedCategory) {
-      setProductAdminError("Seleccioná una categoría para el producto.");
-      return;
-    }
-
-    if (isVeganFilterCategory(normalizedCategory) || isKetoFilterCategory(normalizedCategory)) {
-      setProductAdminError(
-        'Elegí el tipo de producto, no "Veganos/Keto". Marcá los checks de producto si corresponde.'
-      );
-      return;
-    }
-
     const categoryExists = allCategories.some(
       (category) => category.toLowerCase() === normalizedCategory.toLowerCase()
     );
-    if (!categoryExists) {
-      setProductAdminError("La categoría no existe. Creala primero en el bloque de Categorías.");
+
+    const validationError = validateAdminNewProduct({
+      name: normalizedName,
+      category: normalizedCategory,
+      categoryExists,
+      presentations: newProductPresentations,
+      productType: newProductType,
+      variants: newProductVariants,
+    });
+
+    if (validationError) {
+      setProductAdminError(validationError);
       return;
     }
 
-    if (!normalizedPresentation || Number.isNaN(normalizedPrice) || normalizedPrice <= 0) {
-      setProductAdminError("Completá una presentación y precio válido.");
-      return;
-    }
+    const sanitizedPresentations = sanitizePresentations(
+      newProductPresentations.map((presentation) => ({
+        label: presentation.label.trim(),
+        price: normalizePriceValue(presentation.price),
+      }))
+    );
+
+    const hasFlavorVariants = productHasFlavorVariants(newProductType);
+    const sanitizedVariants = hasFlavorVariants
+      ? sanitizeVariants(
+          newProductVariants.map((variant) => ({
+            id: variant.id,
+            label: variant.label,
+            image: variant.image,
+            description: variant.description,
+            contents: String(variant.contentsText ?? "")
+              .split("\n")
+              .map((entry) => entry.trim())
+              .filter(Boolean),
+            isVegan: variant.isVegan,
+            outOfStock: variant.outOfStock,
+          })),
+          { defaultImage: newProductImage.trim() || DEFAULT_PRODUCT_IMAGE }
+        )
+      : [];
 
     const generatedBase = slugify(normalizedName) || "producto";
     const existingIds = new Set(products.map((product) => product.id));
@@ -684,7 +821,7 @@ export default function App() {
       suffix += 1;
     }
 
-    const nextProduct = {
+    const nextProduct = buildAdminNewProduct({
       id: generatedId,
       name: normalizedName,
       category: normalizedCategory,
@@ -693,27 +830,26 @@ export default function App() {
       isKeto: newProductIsKeto,
       isGlutenFree:
         newProductIsGlutenFree || isGlutenFreeFilterCategory(normalizedCategory),
-      outOfStock: false,
-      presentations: [
-        {
-          label: normalizedPresentation,
-          price: Math.round(normalizedPrice),
-        },
-      ],
-    };
+      presentations: sanitizedPresentations,
+      productType: newProductType,
+      shelfNote: newProductShelfNote,
+      variants: sanitizedVariants,
+    });
 
     await withAdminPendingAction("add-product", async () => {
       await createProductApi(nextProduct);
       await refreshCatalogFromApi({ showRefreshing: true });
       expandAdminCategory(normalizedCategory);
       setNewProductName("");
+      setNewProductShelfNote("");
       setNewProductCategory("Sin tacc");
       setNewProductIsVegan(false);
       setNewProductIsKeto(false);
       setNewProductIsGlutenFree(false);
-      setNewProductPresentation("1kg");
-      setNewProductPrice("");
+      setNewProductPresentations(createDefaultNewProductPresentations());
+      setNewProductVariants([]);
       setNewProductImage("");
+      setNewProductType("simple");
       setProductAdminError("");
     }).catch((err) => {
       setProductAdminError(err?.message || "No se pudo crear el producto.");
@@ -755,6 +891,7 @@ export default function App() {
       isKeto: Boolean(product.isKeto),
       isGlutenFree: Boolean(product.isGlutenFree),
       outOfStock: Boolean(product.outOfStock),
+      shelfNote: product.shelfNote ?? "",
       presentations: product.presentations.map((presentation) => ({
         label: presentation.label,
         price: String(presentation.price),
@@ -950,8 +1087,8 @@ export default function App() {
       return;
     }
 
-    const isFlavorLine = editingProductDraft.productType === PRODUCT_TYPE_FLAVOR_LINE;
-    const sanitizedVariants = isFlavorLine
+    const hasFlavorVariants = productHasFlavorVariants(editingProductDraft.productType);
+    const sanitizedVariants = hasFlavorVariants
       ? sanitizeVariants(
           (editingProductDraft.variants ?? []).map((variant) => ({
             id: variant.id,
@@ -968,17 +1105,22 @@ export default function App() {
         )
       : [];
 
-    if (isFlavorLine && !sanitizedVariants.length) {
+    if (hasFlavorVariants && !sanitizedVariants.length) {
       setProductAdminError("Cargá al menos un sabor con nombre.");
       return;
     }
+
+    const normalizedShelfNote = hasFlavorVariants
+      ? ""
+      : sanitizeShelfNote(editingProductDraft.shelfNote);
 
     const updatedProduct = {
       id: editingProductDraft.id,
       name: normalizedName,
       category: normalizedCategory,
       image: editingProductDraft.image.trim() || DEFAULT_PRODUCT_IMAGE,
-      productType: isFlavorLine ? PRODUCT_TYPE_FLAVOR_LINE : "simple",
+      productType: hasFlavorVariants ? editingProductDraft.productType : "simple",
+      ...(hasFlavorVariants ? {} : { shelfNote: normalizedShelfNote }),
       isVegan: Boolean(editingProductDraft.isVegan),
       isKeto: Boolean(editingProductDraft.isKeto),
       isGlutenFree:
@@ -1417,6 +1559,12 @@ export default function App() {
                         line={product}
                         onOpenFlavorPicker={handleOpenFlavorPicker}
                       />
+                    ) : product.productType === PRODUCT_TYPE_FLAVORED ? (
+                      <FlavorLineCard
+                        key={product.id}
+                        line={product}
+                        onAddToCart={handleAddFlavorLineToCart}
+                      />
                     ) : (
                       <ProductCard
                         key={product.id}
@@ -1435,6 +1583,9 @@ export default function App() {
         {isAdmin && activeView === "gestion" && (
           <AdminPanel
             allCategories={allCategories}
+            storeFilterCategories={storeFilterCategories}
+            shelfCategories={shelfCategories}
+            onMoveShelfCategory={handleMoveShelfCategory}
             productCategoryOptions={productCategoryOptions}
             categoryProductCount={categoryProductCount}
             adminGroupedProducts={adminGroupedProducts}
@@ -1459,12 +1610,21 @@ export default function App() {
             onDeleteCategory={handleDeleteCategory}
             newProductName={newProductName}
             onNewProductNameChange={setNewProductName}
+            newProductShelfNote={newProductShelfNote}
+            onNewProductShelfNoteChange={setNewProductShelfNote}
+            newProductType={newProductType}
+            onNewProductTypeChange={setNewProductType}
             newProductCategory={newProductCategory}
             onNewProductCategoryChange={setNewProductCategory}
-            newProductPresentation={newProductPresentation}
-            onNewProductPresentationChange={setNewProductPresentation}
-            newProductPrice={newProductPrice}
-            onNewProductPriceChange={setNewProductPrice}
+            newProductPresentations={newProductPresentations}
+            onNewProductPresentationChange={handleNewProductPresentationChange}
+            onAddNewProductPresentation={handleAddNewProductPresentation}
+            onRemoveNewProductPresentation={handleRemoveNewProductPresentation}
+            newProductVariants={newProductVariants}
+            onNewProductVariantChange={handleNewProductVariantChange}
+            onAddNewProductVariant={handleAddNewProductVariant}
+            onRemoveNewProductVariant={handleRemoveNewProductVariant}
+            onNewProductVariantImageFile={handleNewProductVariantImageFile}
             newProductImage={newProductImage}
             onNewProductImageChange={setNewProductImage}
             newProductIsVegan={newProductIsVegan}
