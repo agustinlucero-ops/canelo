@@ -24,3 +24,4 @@ Algunos productos del catálogo (granolas CUCA y TUTTI GRANI) se venden como una
 - Migración `006_flavor_lines.sql` añade `product_type` y `variants`.
 - Reconciliación del carrito debe indexar sabores dentro de líneas.
 - El import Excel/PDF no agrupa líneas automáticamente (fuera de alcance inicial).
+- Productos con sabores en tarjeta (`flavored`) comparten `variants` pero UI distinta — ver [ADR 0003](./0003-flavor-selection-on-card.md).

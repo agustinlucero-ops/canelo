@@ -63,10 +63,12 @@ El sitio expone `public/manifest.webmanifest` para instalación desde el navegad
 - `PUT /api/products/:id`
 - `DELETE /api/products/:id`
 
-## Documentación completa
+## Documentación
 
-Ver **[DOCUMENTACION.md](./DOCUMENTACION.md)** para arquitectura, API, modelo de datos, panel admin y variables de entorno.
+| Documento | Contenido |
+|-----------|-----------|
+| [DOCUMENTACION.md](./DOCUMENTACION.md) | Arquitectura, API, modelo de datos, componentes |
+| [CONTEXT.md](./CONTEXT.md) | Lenguaje de dominio (producto, estante, sabores, categorías) |
+| [docs/README.md](./docs/README.md) | Índice: ADRs, changelog del hito mayo 2026 |
 
-### Categorías especiales documentadas
-
-En `DOCUMENTACION.md` también está el detalle de cómo quedaron implementadas las categorías **Sin tacc**, **Apto keto** y el filtro transversal **Veganos**, incluyendo reglas del panel admin y migración de datos heredados.
+**Último hito documentado:** [estante, sabores y orden de categorías](./docs/changelog/2026-05-27-estante-y-sabores.md) (tipos `simple` / `flavor-line` / `flavored`, `shelf_note`, reorder de estantes).

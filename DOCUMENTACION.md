@@ -10,7 +10,7 @@ Tienda web para **Dietética Canelo**: catálogo de productos, carrito de compra
 2. [Stack tecnológico](#2-stack-tecnológico)
 3. [Arquitectura](#3-arquitectura)
 4. [Funcionalidades implementadas](#4-funcionalidades-implementadas)
-5. [Categorías especiales: Sin tacc, Apto keto y Veganos](#5-categorías-especiales-sin-tacc-apto-keto-y-veganos)
+5. [Categorías especiales: Sin tacc, Keto y Veganos](#5-categorías-especiales-sin-tacc-keto-y-veganos)
 6. [Modelo de datos](#6-modelo-de-datos)
 7. [Estructura del proyecto](#7-estructura-del-proyecto)
 8. [Componentes y módulos](#8-componentes-y-módulos)
@@ -156,8 +156,8 @@ Acceso: enlace **“Ingresar admin”** → modal con usuario y contraseña. Tra
 |---------|-------------|
 | Sesión | Se guarda en `localStorage` (`canelo.admin-session`) hasta cerrar sesión. |
 | Vista Gestión | Componente `AdminPanel` con secciones colapsables (`CollapsibleSection`). |
-| Categorías | Crear, renombrar, eliminar (los productos de una categoría eliminada pasan a **Sin tacc**). Contador de productos por categoría. |
-| Alta de productos | Formulario en sección “Agregar producto”: nombre, categoría, presentación inicial, precio, URL o archivo de imagen, flag vegano. |
+| Categorías | Crear, renombrar, eliminar; **reordenar estantes** con flechas (`PUT /api/categories/order`). Contador por categoría. |
+| Alta de productos | Tipo: simple / línea de producto / producto con sabores; presentaciones; sabores si aplica; aclaración de estante en simple. |
 | Listado admin | Productos agrupados por categoría con **expandir/colapsar** por grupo y botones “Expandir todo” / “Colapsar todo”. |
 | Edición | Modal `ProductEditModal` con formulario completo y **vista previa en vivo** reutilizando `ProductCard`. |
 | Eliminación | Confirmación antes de borrar. |
@@ -201,12 +201,40 @@ Acceso: enlace **“Ingresar admin”** → modal con usuario y contraseña. Tra
 | POST | `/api/products` | Crea producto |
 | PUT | `/api/products/:id` | Edita producto |
 | DELETE | `/api/products/:id` | Elimina producto |
+| PUT | `/api/categories/order` | Reordena **categorías de estante** (`{ order: string[] }`) |
+
+### 4.10 Tipos de producto en estante
+
+Tres formas de ítem en el catálogo (campo `productType` / `product_type`):
+
+| Tipo | Uso | Tarjeta en tienda |
+|------|-----|-------------------|
+| `simple` | Producto unitario | `ProductCard`; opcional **aclaración de estante** (`shelfNote`) |
+| `flavor-line` | Granola por marca | `GranolaLineCard` + panel `FlavorPickerPanel` |
+| `flavored` | Maní y similares | `FlavorLineCard` (selector de sabor en tarjeta) |
+
+- Sabores en JSONB (`variants`); presentaciones compartidas a nivel producto.
+- Carrito: id del **sabor** (`variant.id`); reconciliación en `reconcileCart.js`.
+- Ver [CONTEXT.md](./CONTEXT.md), ADRs en `docs/adr/` y [changelog del hito](./docs/changelog/2026-05-27-estante-y-sabores.md).
+
+### 4.11 Orden de categorías en la tienda
+
+- **Filtros de tienda** fijos al inicio: Sin tacc → Keto → Veganos (`STORE_FILTER_CATEGORIES`).
+- **Categorías de estante** según `sort_order`; el admin las reordena con flechas (solo estantes).
+- `GET /api/categories` crea filas faltantes detectadas en `products.category` (al final).
+- Frontend: `buildDisplayCategoryOrder.js` aplica la misma composición con o sin API.
+
+### 4.12 Admin: alta por tipo de producto
+
+- Selector al agregar: Simple / Línea de producto / Producto con sabores.
+- Validación: `validateAdminNewProduct.js`; construcción del payload: `buildAdminNewProduct.js`.
+- No se puede usar Veganos/Keto como categoría de estante en el alta (usar checks del producto).
 
 ---
 
-## 5. Categorías especiales: Sin tacc, Apto keto y Veganos
+## 5. Categorías especiales: Sin tacc, Keto y Veganos
 
-Esta sección resume de forma directa qué se implementó en estas categorías y cómo se comportan en catálogo y administración.
+Resumen de cómo se comportan en catálogo y administración (filtros vs estantes).
 
 ### 5.1 Sin tacc
 
@@ -215,11 +243,11 @@ Esta sección resume de forma directa qué se implementó en estas categorías y
 - Se muestra como chip de filtro normal en la tienda.
 - Si se elimina una categoría desde el admin, los productos de esa categoría se reasignan a **Sin tacc** como categoría de respaldo.
 
-### 5.2 Apto keto
+### 5.2 Keto
 
-- Es una **categoría real** del catálogo.
-- Se puede usar en alta/edición de productos sin reglas especiales adicionales.
-- Aparece en filtros, agrupación de catálogo y panel de gestión igual que el resto de categorías reales.
+- Aparece como **filtro de tienda** al inicio del catálogo (chip fijo).
+- En la DB puede existir fila `Keto` con `sort_order` heredado; el orden **visible** del chip lo define el frontend, no las flechas de Gestión.
+- Los productos aptos keto viven en su **categoría de estante** real con `isKeto: true`.
 
 ### 5.3 Veganos
 
@@ -242,27 +270,60 @@ Esta sección resume de forma directa qué se implementó en estas categorías y
 
 ## 6. Modelo de datos
 
-### 5.1 Producto (JSON / localStorage / API)
+### 6.1 Producto simple (JSON / API)
 
 ```json
 {
   "id": "almendra-non-pareil",
   "name": "Almendra non pareil",
   "category": "Frutos secos",
+  "productType": "simple",
   "image": "/images/products/almendra.svg",
+  "shelfNote": "sin piel",
   "isVegan": false,
   "outOfStock": false,
   "presentations": [
     { "label": "100g", "price": 4200 },
-    { "label": "500g", "price": 16000 },
     { "label": "1kg", "price": 25000 }
+  ],
+  "variants": []
+}
+```
+
+En Neon: `product_type`, `variants` (JSONB), `shelf_note`, flags `is_vegan` / `is_keto` / `is_gluten_free`, `presentations` (JSONB).
+
+### 6.1.1 Tipos de producto y sabores
+
+**Línea de producto** (`flavor-line`):
+
+```json
+{
+  "productType": "flavor-line",
+  "variants": [
+    {
+      "id": "granola-cuca-chocolate",
+      "label": "Chocolate",
+      "image": "/images/products/granola.svg",
+      "description": "…",
+      "contents": ["Avena", "Cacao"],
+      "isVegan": true,
+      "outOfStock": false
+    }
   ]
 }
 ```
 
-En la base de datos los campos booleanos son `is_vegan`, `is_keto`, `is_gluten_free` y `out_of_stock`; `presentations` se almacena como **JSONB**.
+**Producto con sabores** (`flavored`): mismos `variants` con campos mínimos (id, label, image, outOfStock).
 
-### 5.2 Ítem de carrito (memoria)
+### 6.2 Orden visible de categorías
+
+Respuesta típica de categorías en cliente tras `buildDisplayCategoryOrder`:
+
+1. Sin tacc, Keto, Veganos (si aplican)
+2. Estantes ordenados por `sortOrder`
+3. Estantes detectados solo en productos (al final hasta reordenar)
+
+### 6.3 Ítem de carrito (memoria)
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -274,16 +335,25 @@ En la base de datos los campos booleanos son `is_vegan`, `is_keto`, `is_gluten_f
 | `unitPrice` | number | Precio entero ARS |
 | `quantity` | number | Cantidad |
 
-### 5.3 Categorías por defecto
+### 6.4 Categorías por defecto
 
-`Sin tacc`, `Granolas`, `Apto keto`, `Cereales`, `Condimentos`, `Congelados`, `Aceites`, `Pastas de mani`, `Frutos secos`, `Veganos` (solo filtro), `Harinas y legumbres`.
+`Sin tacc`, `Granolas`, `Keto`, `Cereales`, … — ver seed y migración `003_may_2026_categories_order.sql`. **Veganos** es filtro transversal, no categoría de alta.
 
-### 5.4 Esquema SQL (`db/migrations/001_catalog.sql` + `002_product_flags_and_constraints.sql`)
+### 6.5 Esquema SQL y migraciones
 
-- `schema_migrations` — control de migraciones aplicadas.
-- `categories` — `name` (PK), `sort_order`.
-- `products` — `id`, `name`, `category` (FK), `image`, `is_vegan`, `is_keto`, `is_gluten_free`, `out_of_stock`, `presentations` (JSONB), `updated_at`.
-- Constraint de categoría reservada en `products` para bloquear `Veganos/Keto/Apto keto` como categoría real.
+| Migración | Contenido |
+|-----------|-----------|
+| `001_catalog.sql` | Tablas base `categories`, `products` |
+| `002_product_flags_and_constraints.sql` | Flags y categorías reservadas |
+| `003_may_2026_categories_order.sql` | `sort_order` inicial; rename Apto keto → Keto |
+| `004_orders.sql` | Pedidos |
+| `005_catalog_import_drafts.sql` | Borradores de importación |
+| `006_flavor_lines.sql` | `product_type`, `variants` |
+| `007_mani_saborizado_flavored.sql` | Maní → `flavored` |
+| `008_product_shelf_note.sql` | `shelf_note` |
+
+- `categories`: `name` (PK), `sort_order`.
+- `products`: incluye `product_type`, `variants`, `shelf_note`, flags y `presentations` JSONB.
 
 ---
 
@@ -307,7 +377,11 @@ canelo/
 │   │   ├── CartDrawer.jsx
 │   │   ├── CollapsibleSection.jsx
 │   │   ├── ProductCard.jsx
-│   │   ├── ProductEditModal.jsx
+│   │   ├── GranolaLineCard.jsx / FlavorLineCard.jsx
+│   │   ├── FlavorPickerPanel.jsx
+│   │   ├── ProductTitleBlock.jsx
+│   │   ├── ProductEditModal.jsx / FlavoredProductEditModal.jsx
+│   │   ├── AdminVariantsFields.jsx
 │   │   └── QuantitySelector.jsx
 │   ├── context/
 │   │   └── CartContext.jsx
@@ -316,6 +390,9 @@ canelo/
 │   ├── hooks/
 │   │   └── useBodyScrollLock.js
 │   └── utils/
+│       ├── sanitizeCatalog.js
+│       ├── buildDisplayCategoryOrder.js
+│       ├── validateAdminNewProduct.js
 │       ├── productCategories.js
 │       ├── productName.js
 │       └── whatsapp.js
@@ -325,8 +402,11 @@ canelo/
 │   ├── catalog.mjs            # Consultas de catálogo
 │   └── db.mjs                 # Cliente Neon
 ├── db/
-│   └── migrations/
-│       └── 001_catalog.sql
+│   └── migrations/          # 001 … 008 (ver §6.5)
+├── docs/
+│   ├── README.md              # Índice de documentación
+│   ├── adr/                   # Decisiones de arquitectura
+│   └── changelog/
 ├── scripts/
 │   ├── run-migration.mjs
 │   ├── seed-catalog.mjs
@@ -361,7 +441,13 @@ Sección acordeón accesible (`aria-expanded`, `aria-controls`) reutilizada en e
 
 ### `ProductCard.jsx`
 
-Tarjeta de producto: badges vegano/stock, selector de presentación, botón agregar al carrito. Soporta prop `preview` para desactivar interacción en el editor.
+Tarjeta de producto **simple**: badges, presentaciones, `ProductTitleBlock` (nombre + aclaración de estante). Prop `preview` en el editor.
+
+### `GranolaLineCard.jsx` / `FlavorLineCard.jsx` / `FlavorPickerPanel.jsx`
+
+- **GranolaLineCard**: línea `flavor-line`; abre panel de sabores.
+- **FlavorLineCard**: producto `flavored`; `<select>` de sabor y agregar.
+- **FlavorPickerPanel**: detalle por sabor (granola).
 
 ### `QuantitySelector.jsx`
 
@@ -387,8 +473,13 @@ Bloquea el scroll del documento mientras hay overlays abiertos (contador de refe
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `productCategories.js` | Filtro Veganos vs categoría real; opciones para selects del admin |
-| `productName.js` | Quita prefijo “Granola ” en categoría Granolas; normaliza “TUTTI GRANI” |
+| `sanitizeCatalog.js` | Tipos de producto, `variants`, `shelfNote`, presentaciones |
+| `buildDisplayCategoryOrder.js` | Orden visible: filtros + estantes |
+| `validateShelfCategoryReorder.js` | Validación del reorder de estantes |
+| `buildAdminNewProduct.js` / `validateAdminNewProduct.js` | Alta de productos en admin |
+| `productCategories.js` | Filtros de tienda vs estantes; opciones de categoría en admin |
+| `productName.js` | Normalización de nombres (granolas, etc.) |
+| `reconcileCart.js` | Alinea carrito con catálogo (incluye sabores) |
 | `whatsapp.js` | `formatPrice`, `buildWhatsAppMessage`, `buildWhatsAppLink` |
 
 ---
@@ -428,6 +519,7 @@ Bloquea el scroll del documento mientras hay overlays abiertos (contador de refe
 | GET | `/api/categories` | `{ categories: [{ name, sortOrder }] }` |
 | POST | `/api/categories` | `{ name }` -> `{ category }` |
 | PUT | `/api/categories/:name` | `{ nextName }` -> `{ category }` |
+| PUT | `/api/categories/order` | `{ order: string[] }` — solo estantes |
 | DELETE | `/api/categories/:name` | `{ ok: true, result }` |
 | GET | `/api/products` | `{ products: [...] }` — query opcional `category` |
 | GET | `/api/products/:id` | `{ product }` o 404 |
@@ -439,7 +531,7 @@ Bloquea el scroll del documento mientras hay overlays abiertos (contador de refe
 
 | Comando | Acción |
 |---------|--------|
-| `npm run db:migrate` | Aplica `db/migrations/001_catalog.sql` |
+| `npm run db:migrate` | Aplica todas las migraciones en `db/migrations/` |
 | `npm run db:seed` | Inserta/actualiza catálogo desde `products.json` |
 | `npm run db:setup` | Migración + seed |
 | `npm run catalog:parse-pdf` | Utilidad para extraer datos de un PDF de catálogo |
@@ -607,8 +699,18 @@ VITE_ENABLE_REMOTE_ADMIN_WRITES=true
 5. **Filtro vegano** desacoplado de la categoría de producto.
 6. **Branding** con logo WebP/JPEG e iconografía Lucide.
 7. **API + Neon** con migraciones incrementales, seed, lectura y CRUD de catálogo.
-8. **UX** con bloqueo de scroll en overlays, carga desde API, banner offline, estados vacíos, orden de categorías por `sort_order`, SEO básico y carrito que se vacía tras enviar pedido por WhatsApp.
+8. **UX** con bloqueo de scroll en overlays, carga desde API, banner offline, estados vacíos, SEO básico y carrito que se vacía tras enviar pedido por WhatsApp.
+9. **Tipos de producto** (`simple`, `flavor-line`, `flavored`), aclaración de estante, líneas de granola y maní con sabores.
+10. **Orden de catálogo** compuesto: filtros fijos + estantes reordenables desde admin.
 
 ---
 
-*Documentación del repositorio **canelo** — Dietética Canelo. Última revisión: mayo 2026, con persistencia real de gestión admin en API + Neon.*
+## Documentación relacionada
+
+- [CONTEXT.md](./CONTEXT.md) — lenguaje de dominio
+- [docs/README.md](./docs/README.md) — índice de docs y ADRs
+- [docs/changelog/2026-05-27-estante-y-sabores.md](./docs/changelog/2026-05-27-estante-y-sabores.md) — detalle del hito mayo 2026
+
+---
+
+*Documentación del repositorio **canelo** — Dietética Canelo. Última revisión: 27 mayo 2026.*
