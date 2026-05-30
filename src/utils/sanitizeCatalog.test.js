@@ -3,6 +3,7 @@ import {
   sanitizePresentations,
   sanitizeProducts,
   sanitizeShelfNote,
+  sanitizeVariants,
 } from "./sanitizeCatalog";
 
 describe("sanitizeShelfNote", () => {
@@ -24,6 +25,20 @@ describe("sanitizePresentations", () => {
     expect(result).toEqual([
       { label: "1kg", price: 1501 },
       { label: "500g", price: 2500 },
+    ]);
+  });
+});
+
+describe("sanitizeVariants", () => {
+  it("genera ids unicos cuando vienen repetidos", () => {
+    const result = sanitizeVariants([
+      { id: "mani-sabor", label: "Azucarados" },
+      { id: "mani-sabor", label: "Sin azúcar" },
+    ]);
+
+    expect(result).toEqual([
+      expect.objectContaining({ id: "mani-sabor", label: "Azucarados" }),
+      expect.objectContaining({ id: "mani-sabor-2", label: "Sin azúcar" }),
     ]);
   });
 });

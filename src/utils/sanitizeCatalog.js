@@ -37,9 +37,18 @@ export function sanitizePresentations(presentations) {
 export function sanitizeVariants(variants, { defaultImage = DEFAULT_PRODUCT_IMAGE } = {}) {
   if (!Array.isArray(variants)) return [];
 
+  const usedIds = new Set();
+
   return variants
     .map((variant, index) => {
-      const id = String(variant?.id ?? "").trim() || `sabor-${index + 1}`;
+      const rawId = String(variant?.id ?? "").trim();
+      const baseId = rawId || `sabor-${index + 1}`;
+      let id = baseId;
+      let duplicateIndex = 2;
+      while (usedIds.has(id)) {
+        id = `${baseId}-${duplicateIndex}`;
+        duplicateIndex += 1;
+      }
       const label = String(variant?.label ?? "").trim();
       const image = String(variant?.image ?? "").trim() || defaultImage;
       const description = String(variant?.description ?? "").trim();
@@ -47,6 +56,7 @@ export function sanitizeVariants(variants, { defaultImage = DEFAULT_PRODUCT_IMAG
         ? variant.contents.map((entry) => String(entry ?? "").trim()).filter(Boolean)
         : [];
       if (!label) return null;
+      usedIds.add(id);
 
       return {
         id,
