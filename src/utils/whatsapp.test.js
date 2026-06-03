@@ -39,14 +39,27 @@ describe("whatsapp utils", () => {
     );
   });
 
-  it("builds wa.me link", () => {
+  it("uses api.whatsapp.com on mobile", () => {
     const link = buildWhatsAppLink({
       phoneNumber: "5491122334455",
       message: "Hola",
+      client: "mobile",
     });
 
-    expect(link).toContain("https://wa.me/5491122334455");
-    expect(link).toContain(encodeURIComponent("Hola"));
+    expect(link).toBe("https://api.whatsapp.com/send?phone=5491122334455&text=Hola");
+  });
+
+  it("uses web.whatsapp.com on desktop", () => {
+    const link = buildWhatsAppLink({
+      phoneNumber: "5491122334455",
+      message: "Hola 👋",
+      client: "desktop",
+    });
+
+    expect(link).toBe(
+      `https://web.whatsapp.com/send?phone=5491122334455&text=${encodeURIComponent("Hola 👋")}`
+    );
+    expect(link).not.toContain("wa.me");
   });
 
   it("preserves emoji code points in encoded link", () => {
@@ -56,10 +69,13 @@ describe("whatsapp utils", () => {
       items: [{ name: "Almendra", presentation: "1kg", quantity: 1, unitPrice: 1000 }],
       totals: { total: 1000 },
     });
-    const decoded = decodeURIComponent(buildWhatsAppLink({
-      phoneNumber: "5491122334455",
-      message,
-    }).split("text=")[1]);
+    const decoded = decodeURIComponent(
+      buildWhatsAppLink({
+        phoneNumber: "5491122334455",
+        message,
+        client: "desktop",
+      }).split("text=")[1]
+    );
 
     expect(decoded).toContain("\u{1F49A}");
     expect(decoded).toContain("\u{1F449}");

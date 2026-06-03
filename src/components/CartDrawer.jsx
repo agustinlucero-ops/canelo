@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { createOrder } from "../api/orders";
-import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
+import { buildWhatsAppMessage, formatPrice, openWhatsAppLink } from "../utils/whatsapp";
 
 const WHATSAPP_PHONE =
   import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") || "5491122334455";
@@ -31,8 +31,7 @@ export default function CartDrawer({
       items,
       totals,
     });
-    const checkoutLink = buildWhatsAppLink({ phoneNumber: WHATSAPP_PHONE, message });
-    window.open(checkoutLink, "_blank", "noopener,noreferrer");
+    openWhatsAppLink({ phoneNumber: WHATSAPP_PHONE, message });
 
     void createOrder({
       customerName,
