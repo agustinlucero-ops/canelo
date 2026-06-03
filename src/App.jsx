@@ -1,4 +1,4 @@
-﻿import { ShoppingCart } from "lucide-react";
+﻿import { ChevronDown, ShoppingCart } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
@@ -1443,33 +1443,39 @@ export default function App() {
             <label className="field-label" htmlFor="category-filter">
               Buscar categoría o producto
             </label>
-            <input
-              id="category-filter"
-              className="select-field"
-              type="search"
-              autoComplete="off"
-              role="combobox"
-              aria-expanded={isCategorySuggestionsOpen}
-              aria-controls="category-filter-suggestions"
-              value={categorySearch}
-              placeholder="Buscar categoría o producto..."
-              onFocus={() => setIsCategorySuggestionsOpen(true)}
-              onChange={(event) => {
-                setCategorySearch(event.target.value);
-                setSelectedProductId(null);
-                setIsCategorySuggestionsOpen(true);
-              }}
-              onBlur={() => {
-                window.setTimeout(() => {
-                  setIsCategorySuggestionsOpen(false);
-                }, 120);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  setIsCategorySuggestionsOpen(false);
-                }
-              }}
-            />
+            <div className="category-filter-field">
+              <input
+                id="category-filter"
+                className="select-field"
+                type="search"
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={isCategorySuggestionsOpen}
+                aria-controls="category-filter-suggestions"
+                value={categorySearch}
+                placeholder="Buscar categoría o producto..."
+                onFocus={() => setIsCategorySuggestionsOpen(true)}
+                onChange={(event) => {
+                  setCategorySearch(event.target.value);
+                  setSelectedProductId(null);
+                  setIsCategorySuggestionsOpen(true);
+                }}
+                onBlur={() => {
+                  window.setTimeout(() => {
+                    setIsCategorySuggestionsOpen(false);
+                  }, 120);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setIsCategorySuggestionsOpen(false);
+                  }
+                }}
+              />
+              <ChevronDown
+                aria-hidden="true"
+                className={`category-filter-chevron ${isCategorySuggestionsOpen ? "is-open" : ""}`}
+              />
+            </div>
 
             {isCategorySuggestionsOpen && (hasCatalogSearchSuggestions || showSearchNoMatches) && (
               <div
