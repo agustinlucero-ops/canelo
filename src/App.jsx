@@ -39,6 +39,7 @@ import {
   isStoreFilterCategory,
   isVeganFilterCategory,
 } from "./utils/productCategories";
+import { flavorLineShowsPresentationsOnCard } from "./utils/mixFrutosSecosShelf";
 import {
   DEFAULT_PRODUCT_IMAGE,
   PRODUCT_TYPE_FLAVORED,
@@ -127,6 +128,23 @@ export default function App() {
   } = useCart();
   const [activeFlavorLine, setActiveFlavorLine] = useState(null);
   const [isFlavorPickerOpen, setFlavorPickerOpen] = useState(false);
+  const [linePresentationById, setLinePresentationById] = useState({});
+
+  const getLinePresentationLabel = useCallback(
+    (line) => {
+      if (!line?.presentations?.length) return "";
+      const stored = linePresentationById[line.id];
+      if (stored && line.presentations.some((presentation) => presentation.label === stored)) {
+        return stored;
+      }
+      return line.presentations[0].label;
+    },
+    [linePresentationById]
+  );
+
+  const setLinePresentationLabel = useCallback((lineId, label) => {
+    setLinePresentationById((current) => ({ ...current, [lineId]: label }));
+  }, []);
   const [cartReconcileNotice, setCartReconcileNotice] = useState("");
   const [cartAddToastMessage, setCartAddToastMessage] = useState("");
   const cartAddNoticeRef = useRef(null);
@@ -1558,6 +1576,10 @@ export default function App() {
                         key={product.id}
                         line={product}
                         onOpenFlavorPicker={handleOpenFlavorPicker}
+                        selectedPresentation={getLinePresentationLabel(product)}
+                        onPresentationChange={(label) =>
+                          setLinePresentationLabel(product.id, label)
+                        }
                       />
                     ) : product.productType === PRODUCT_TYPE_FLAVORED ? (
                       <FlavorLineCard
@@ -1694,6 +1716,14 @@ export default function App() {
         line={activeFlavorLine}
         onClose={handleCloseFlavorPicker}
         onAddToCart={handleAddFlavorLineToCart}
+        selectedPresentation={
+          activeFlavorLine ? getLinePresentationLabel(activeFlavorLine) : ""
+        }
+        onPresentationChange={
+          activeFlavorLine && flavorLineShowsPresentationsOnCard(activeFlavorLine)
+            ? (label) => setLinePresentationLabel(activeFlavorLine.id, label)
+            : undefined
+        }
       />
 
       {isAdminModalOpen && (

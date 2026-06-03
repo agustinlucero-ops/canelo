@@ -222,7 +222,8 @@
   {
     "id": "mix-energetico",
     "name": "Mix energetico",
-    "category": "Frutos secos",
+    "category": "Mix frutos secos",
+    "productType": "flavor-line",
     "image": "/images/products/almendra.svg",
     "presentations": [
       {
@@ -237,12 +238,21 @@
         "label": "1kg",
         "price": 14500
       }
+    ],
+    "variants": [
+      {
+        "id": "mix-energetico",
+        "label": "Mix energetico",
+        "image": "/images/products/almendra.svg",
+        "outOfStock": false
+      }
     ]
   },
   {
     "id": "mix-clasico",
     "name": "Mix clasico",
-    "category": "Frutos secos",
+    "category": "Mix frutos secos",
+    "productType": "flavor-line",
     "image": "/images/products/almendra.svg",
     "presentations": [
       {
@@ -257,12 +267,21 @@
         "label": "1kg",
         "price": 18500
       }
+    ],
+    "variants": [
+      {
+        "id": "mix-clasico",
+        "label": "Mix clasico",
+        "image": "/images/products/almendra.svg",
+        "outOfStock": false
+      }
     ]
   },
   {
     "id": "mix-power",
     "name": "Mix power",
-    "category": "Frutos secos",
+    "category": "Mix frutos secos",
+    "productType": "flavor-line",
     "image": "/images/products/almendra.svg",
     "presentations": [
       {
@@ -277,12 +296,21 @@
         "label": "1kg",
         "price": 22500
       }
+    ],
+    "variants": [
+      {
+        "id": "mix-power",
+        "label": "Mix power",
+        "image": "/images/products/almendra.svg",
+        "outOfStock": false
+      }
     ]
   },
   {
     "id": "mix-patagonico",
     "name": "Mix patagonico",
-    "category": "Frutos secos",
+    "category": "Mix frutos secos",
+    "productType": "flavor-line",
     "image": "/images/products/almendra.svg",
     "presentations": [
       {
@@ -297,12 +325,21 @@
         "label": "1kg",
         "price": 27000
       }
+    ],
+    "variants": [
+      {
+        "id": "mix-patagonico",
+        "label": "Mix patagonico",
+        "image": "/images/products/almendra.svg",
+        "outOfStock": false
+      }
     ]
   },
   {
     "id": "mix-canelo",
     "name": "Mix Canelo",
-    "category": "Frutos secos",
+    "category": "Mix frutos secos",
+    "productType": "flavor-line",
     "image": "/images/products/almendra.svg",
     "presentations": [
       {
@@ -316,6 +353,14 @@
       {
         "label": "1kg",
         "price": 57000
+      }
+    ],
+    "variants": [
+      {
+        "id": "mix-canelo",
+        "label": "Mix Canelo",
+        "image": "/images/products/almendra.svg",
+        "outOfStock": false
       }
     ]
   },

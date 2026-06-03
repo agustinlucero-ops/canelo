@@ -21,6 +21,30 @@ describe("FlavorPickerPanel", () => {
     ],
   };
 
+  it("usa presentación controlada cuando se pasa desde la tarjeta", () => {
+    const onPresentationChange = vi.fn();
+    const html = renderToStaticMarkup(
+      <FlavorPickerPanel
+        isOpen
+        line={{
+          ...line,
+          presentations: [
+            { label: "100g", price: 2700 },
+            { label: "500g", price: 9500 },
+          ],
+        }}
+        onClose={vi.fn()}
+        onAddToCart={vi.fn()}
+        selectedPresentation="500g"
+        onPresentationChange={onPresentationChange}
+      />
+    );
+
+    expect(html).toContain('aria-checked="true"');
+    expect(html).toContain("500g");
+    expect(html).toContain("$9.500");
+  });
+
   it("muestra chips de sabor y agregar al carrito para líneas de producto", () => {
     const html = renderToStaticMarkup(
       <FlavorPickerPanel isOpen line={line} onClose={vi.fn()} onAddToCart={vi.fn()} />

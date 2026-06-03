@@ -4,20 +4,39 @@ import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
 import { getFirstAvailableVariant } from "../utils/flavorLineCart";
 
-export default function FlavorPickerPanel({ isOpen, line, onClose, onAddToCart, preview = false }) {
+export default function FlavorPickerPanel({
+  isOpen,
+  line,
+  onClose,
+  onAddToCart,
+  preview = false,
+  selectedPresentation: controlledPresentation,
+  onPresentationChange,
+}) {
+  const isControlledPresentation = onPresentationChange != null;
   const [selectedVariantId, setSelectedVariantId] = useState(
     () => getFirstAvailableVariant(line?.variants)?.id ?? null
   );
-  const [selectedPresentation, setSelectedPresentation] = useState(
+  const [internalPresentation, setInternalPresentation] = useState(
     () => line?.presentations?.[0]?.label ?? ""
   );
+
+  const selectedPresentation = isControlledPresentation
+    ? (controlledPresentation ?? line?.presentations?.[0]?.label ?? "")
+    : internalPresentation;
+
+  const setSelectedPresentation = isControlledPresentation
+    ? onPresentationChange
+    : setInternalPresentation;
 
   useEffect(() => {
     if (!line) return;
     const firstVariant = getFirstAvailableVariant(line.variants);
     setSelectedVariantId(firstVariant?.id ?? null);
-    setSelectedPresentation(line.presentations[0]?.label ?? "");
-  }, [line]);
+    if (!isControlledPresentation) {
+      setInternalPresentation(line.presentations[0]?.label ?? "");
+    }
+  }, [line, isControlledPresentation]);
 
   const selectedVariant = useMemo(
     () => line?.variants?.find((variant) => variant.id === selectedVariantId) ?? null,
