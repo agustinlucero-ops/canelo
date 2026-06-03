@@ -136,12 +136,12 @@ export default function CartDrawer({
               />
 
               <label htmlFor="customer-phone" className="field-label">
-                Telefono
+                Direccion
               </label>
               <input
                 id="customer-phone"
-                type="tel"
-                placeholder="11 5555 5555"
+                type="text"
+                placeholder="En caso de envío"
                 value={customerPhone}
                 onChange={(event) => setCustomerPhone(event.target.value)}
               />

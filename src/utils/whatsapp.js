@@ -25,7 +25,7 @@ export function buildWhatsAppMessage({ storeName, customerName, customerPhone, i
     `Total: ${formatPrice(totals.total)}`,
     "",
     `Nombre: ${customerName || "Sin nombre"}`,
-    `Telefono: ${customerPhone || "Sin telefono"}`,
+    `Direccion: ${customerPhone || "Sin direccion"}`,
   ];
 
   return lines.join("\n");
