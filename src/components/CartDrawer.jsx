@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createOrder } from "../api/orders";
 import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
 
@@ -18,9 +18,11 @@ export default function CartDrawer({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
-  const checkoutLink = useMemo(() => {
+  const handleWhatsAppCheckout = (event) => {
+    event.preventDefault();
+
     if (!items.length) {
-      return "";
+      return;
     }
 
     const message = buildWhatsAppMessage({
@@ -29,15 +31,8 @@ export default function CartDrawer({
       items,
       totals,
     });
-
-    return buildWhatsAppLink({ phoneNumber: WHATSAPP_PHONE, message });
-  }, [customerName, customerPhone, items, totals]);
-
-  const handleWhatsAppCheckout = (event) => {
-    if (!items.length || !checkoutLink) {
-      event.preventDefault();
-      return;
-    }
+    const checkoutLink = buildWhatsAppLink({ phoneNumber: WHATSAPP_PHONE, message });
+    window.open(checkoutLink, "_blank", "noopener,noreferrer");
 
     void createOrder({
       customerName,
@@ -144,15 +139,14 @@ export default function CartDrawer({
                 onChange={(event) => setCustomerPhone(event.target.value)}
               />
 
-              <a
-                href={checkoutLink || "#"}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
                 className={`button whatsapp ${items.length ? "" : "disabled"}`.trim()}
+                disabled={!items.length}
                 onClick={handleWhatsAppCheckout}
               >
                 Enviar pedido por WhatsApp
-              </a>
+              </button>
             </div>
           </>
         )}

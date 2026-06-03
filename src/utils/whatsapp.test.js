@@ -48,4 +48,24 @@ describe("whatsapp utils", () => {
     expect(link).toContain("https://wa.me/5491122334455");
     expect(link).toContain(encodeURIComponent("Hola"));
   });
+
+  it("preserves emoji code points in encoded link", () => {
+    const message = buildWhatsAppMessage({
+      customerName: "Ana",
+      customerPhone: "CABA",
+      items: [{ name: "Almendra", presentation: "1kg", quantity: 1, unitPrice: 1000 }],
+      totals: { total: 1000 },
+    });
+    const decoded = decodeURIComponent(buildWhatsAppLink({
+      phoneNumber: "5491122334455",
+      message,
+    }).split("text=")[1]);
+
+    expect(decoded).toContain("\u{1F49A}");
+    expect(decoded).toContain("\u{1F449}");
+    expect(decoded).toContain("\u{1F4B0}");
+    expect(decoded).toContain("\u{1F464}");
+    expect(decoded).toContain("\u{1F3E1}");
+    expect(decoded).toContain("\u{1F64C}");
+  });
 });
