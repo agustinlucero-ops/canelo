@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { createOrder } from "../api/orders";
 import { buildWhatsAppLink, buildWhatsAppMessage, formatPrice } from "../utils/whatsapp";
 
-const STORE_NAME = "Dietetica Canelo";
 const WHATSAPP_PHONE =
   import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") || "5491122334455";
 
@@ -25,7 +24,6 @@ export default function CartDrawer({
     }
 
     const message = buildWhatsAppMessage({
-      storeName: STORE_NAME,
       customerName,
       customerPhone,
       items,

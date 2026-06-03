@@ -9,9 +9,8 @@ describe("whatsapp utils", () => {
 
   it("builds order message", () => {
     const message = buildWhatsAppMessage({
-      storeName: "Dietetica Canelo",
       customerName: "Ana",
-      customerPhone: "1112345678",
+      customerPhone: "Av. Rivadavia 4521",
       items: [
         {
           name: "Almendra",
@@ -23,9 +22,21 @@ describe("whatsapp utils", () => {
       totals: { total: 2000 },
     });
 
-    expect(message).toContain("Ana");
-    expect(message).toContain("Almendra");
-    expect(message).toContain("1112345678");
+    expect(message).toBe(
+      [
+        "¡Hola! Les mando el pedido que armé en la web de Canelo 💚:",
+        "",
+        "Almendra (1kg) 👉 $2.000",
+        "",
+        "💰Total: $2.000",
+        "",
+        "Mis datos:",
+        "👤 Ana",
+        "🏡 Av. Rivadavia 4521",
+        "",
+        "¡Avísenme cómo seguimos! 🙌",
+      ].join("\n")
+    );
   });
 
   it("builds wa.me link", () => {

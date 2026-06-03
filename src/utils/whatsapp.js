@@ -11,24 +11,25 @@ export function formatPrice(value) {
     .join("");
 }
 
-export function buildWhatsAppMessage({ storeName, customerName, customerPhone, items, totals }) {
-  const lines = [
-    `Hola, quiero hacer un pedido en ${storeName}:`,
-    "",
-    ...items.map(
-      (item, index) =>
-        `${index + 1}. ${item.name} (${item.presentation}) x${item.quantity} - ${formatPrice(
-          item.unitPrice * item.quantity
-        )}`
-    ),
-    "",
-    `Total: ${formatPrice(totals.total)}`,
-    "",
-    `Nombre: ${customerName || "Sin nombre"}`,
-    `Direccion: ${customerPhone || "Sin direccion"}`,
-  ];
+export function buildWhatsAppMessage({ customerName, customerPhone, items, totals }) {
+  const productLines = items.map(
+    (item) =>
+      `${item.name} (${item.presentation}) 👉 ${formatPrice(item.unitPrice * item.quantity)}`
+  );
 
-  return lines.join("\n");
+  return [
+    "¡Hola! Les mando el pedido que armé en la web de Canelo 💚:",
+    "",
+    productLines.join("\n\n"),
+    "",
+    `💰Total: ${formatPrice(totals.total)}`,
+    "",
+    "Mis datos:",
+    `👤 ${customerName || "Sin nombre"}`,
+    `🏡 ${customerPhone || "Sin dirección"}`,
+    "",
+    "¡Avísenme cómo seguimos! 🙌",
+  ].join("\n");
 }
 
 export function buildWhatsAppLink({ phoneNumber, message }) {
