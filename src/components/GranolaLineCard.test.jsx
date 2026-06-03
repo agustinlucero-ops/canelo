@@ -26,7 +26,7 @@ describe("GranolaLineCard", () => {
       <GranolaLineCard line={line} onOpenFlavorPicker={vi.fn()} />
     );
 
-    expect(html).toContain("Sabores y contenidos");
+    expect(html).toContain("Ver contenido");
     expect(html).not.toContain("Agregar al carrito");
   });
 });

@@ -35,7 +35,7 @@ export default function GranolaLineCard({ line, onOpenFlavorPicker, preview = fa
             onClick={() => onOpenFlavorPicker(line)}
             disabled={line.outOfStock}
           >
-            Sabores y contenidos
+            Ver contenido
           </button>
         )}
       </div>
