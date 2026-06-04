@@ -1,7 +1,7 @@
 {
-  "name": "Dietética Canelo",
+  "name": "Tienda Saludable Canelo",
   "short_name": "Canelo",
-  "description": "Catálogo online de Dietética Canelo. Pedí por WhatsApp.",
+  "description": "Carrito online Tienda Canelo: Frutos secos, sin TACC, Keto, vegano y más. Hacemos envíos.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f6f8f6",
