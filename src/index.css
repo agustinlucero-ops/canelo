@@ -62,7 +62,8 @@ p {
 
 .site-brand-logo {
   display: block;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: auto;
   max-height: 4.5rem;
   object-fit: contain;
