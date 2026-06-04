@@ -61,7 +61,6 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
             )}
           </div>
         )}
-        {product.outOfStock && <span className="stock-badge product-stock-badge">Sin stock</span>}
       </div>
       <div className="product-content">
         <ProductTitleBlock
@@ -86,7 +85,7 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
             onClick={handleAdd}
             disabled={product.outOfStock}
           >
-            {product.outOfStock ? "No disponible" : "Agregar al carrito"}
+            {product.outOfStock ? "Sin stock" : "Agregar al carrito"}
           </button>
         )}
       </div>

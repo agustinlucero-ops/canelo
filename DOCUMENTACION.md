@@ -118,7 +118,7 @@ Checkout: wa.me → WhatsApp (sin pasar por el servidor)
   - Precio de la presentación seleccionada.
   - Selector de **presentaciones** (chips: 100g, 500g, 1kg, etc.).
   - Badge **vegano** (icono Lucide `Vegan`) si `isVegan === true`.
-  - Badge **Sin stock** si `outOfStock === true`; el botón de agregar se deshabilita.
+  - Si `outOfStock === true`, el botón principal muestra **Sin stock** (deshabilitado); no hay cartel sobre la imagen.
 
 ### 4.2 Filtro por categoría
 

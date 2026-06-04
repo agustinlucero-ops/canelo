@@ -37,6 +37,7 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | **Producto con sabores**  | Un nombre en estante y sabores elegibles en la tarjeta (ej. Maní saborizado)               | Variante, subproducto        |
 | **Sabor**                 | Opción dentro de una línea o de un producto con sabores                                    | Variante, presentación       |
 | **Aclaración de estante** | Texto corto opcional bajo el nombre en producto **simple** (máx. 50 caracteres)            | Subtítulo, descripción larga |
+| **Indicación de sin stock en tarjeta** | En la tienda, el producto o línea sin stock se comunica en el botón principal de la tarjeta («Sin stock»), no con cartel sobre la foto | No disponible (en botón de catálogo) |
 
 
 ### Categorías y navegación

@@ -40,6 +40,7 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
     !selectedVariant.outOfStock &&
     !line.outOfStock &&
     currentPresentation;
+  const stockBlocksAdd = line.outOfStock || Boolean(selectedVariant?.outOfStock);
 
   const handleAdd = () => {
     if (!canAdd) return;
@@ -57,7 +58,6 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
             </span>
           </div>
         )}
-        {line.outOfStock && <span className="stock-badge product-stock-badge">Sin stock</span>}
       </div>
       <div className="product-content">
         <h3>{displayName}</h3>
@@ -102,7 +102,7 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
               onClick={handleAdd}
               disabled={!canAdd}
             >
-              {line.outOfStock ? "No disponible" : "Agregar al carrito"}
+              {stockBlocksAdd ? "Sin stock" : "Agregar al carrito"}
             </button>
           </div>
         )}

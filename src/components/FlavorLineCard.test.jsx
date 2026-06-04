@@ -60,4 +60,37 @@ describe("FlavorLineCard", () => {
     expect(htmlSingle).not.toContain("presentation-selector");
     expect(htmlMulti).toContain("presentation-selector");
   });
+
+  it("muestra Sin stock en el botón cuando toda la línea está sin stock", () => {
+    const html = renderToStaticMarkup(
+      <FlavorLineCard line={{ ...line, outOfStock: true }} onAddToCart={vi.fn()} />
+    );
+
+    expect(html).toContain("Sin stock");
+    expect(html).not.toContain("No disponible");
+    expect(html).not.toContain("Agregar al carrito");
+  });
+
+  it("no muestra cartel Sin stock sobre la imagen cuando toda la línea está sin stock", () => {
+    const html = renderToStaticMarkup(
+      <FlavorLineCard line={{ ...line, outOfStock: true }} onAddToCart={vi.fn()} />
+    );
+
+    expect(html).not.toContain("product-stock-badge");
+  });
+
+  it("muestra Sin stock en el botón cuando el sabor elegido está sin stock", () => {
+    const html = renderToStaticMarkup(
+      <FlavorLineCard
+        line={{
+          ...line,
+          variants: [{ id: "mani-sabor-1", label: "BBQ", image: "/images/products/mani.svg", outOfStock: true }],
+        }}
+        onAddToCart={vi.fn()}
+      />
+    );
+
+    expect(html).toContain("Sin stock");
+    expect(html).not.toContain("Agregar al carrito");
+  });
 });
