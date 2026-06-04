@@ -650,6 +650,89 @@ p {
   color: #14532d;
 }
 
+.site-footer {
+  margin-top: 2.5rem;
+  margin-bottom: 4.5rem;
+  padding: 1.5rem 1.1rem;
+  border-radius: 0.8rem;
+  background: #166534;
+  color: #ffffff;
+  font-size: 0.88rem;
+}
+
+.site-footer-inner {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.site-footer-contact,
+.site-footer-actions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.site-footer-contact p,
+.site-footer-legal {
+  margin: 0;
+}
+
+.site-footer-email a,
+.site-footer-whatsapp-link,
+.site-footer-social a {
+  color: #ffffff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-footer-email a:hover,
+.site-footer-whatsapp-link:hover,
+.site-footer-social a:hover {
+  color: #dcfce7;
+  text-decoration: underline;
+}
+
+.site-footer-social {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.site-footer-shipping {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.site-footer .admin-access-link {
+  margin: 0.25rem 0 0;
+  justify-self: start;
+  color: #ffffff;
+}
+
+.site-footer .admin-access-link:hover {
+  color: #dcfce7;
+}
+
+.site-footer-legal {
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+  color: #ffffff;
+  opacity: 0.92;
+}
+
+@media (min-width: 640px) {
+  .site-footer-inner {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .site-footer .admin-access-link {
+    justify-self: end;
+  }
+}
+
 .category-filter {
   background: #ffffff;
   border: 1px solid #dce5dc;

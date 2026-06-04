@@ -8,6 +8,7 @@ import FlavorLineCard from "./components/FlavorLineCard";
 import FlavorPickerPanel from "./components/FlavorPickerPanel";
 import CartAddToast from "./components/CartAddToast";
 import CartDrawer from "./components/CartDrawer";
+import SiteFooter from "./components/SiteFooter";
 import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import { fetchCatalogFromApi } from "./api/catalog";
@@ -1409,18 +1410,6 @@ export default function App() {
       <main>
         {activeView === "catalogo" && (
           <>
-            {!isAdmin && (
-              <section className="category-admin-section">
-                <button
-                  type="button"
-                  className="admin-access-link"
-                  onClick={handleAdminAccessClick}
-                >
-                  Ingresar admin
-                </button>
-              </section>
-            )}
-
             {catalogLoadStatus === "offline" && products.length > 0 && (
               <div className="catalog-offline-banner" role="status">
                 No pudimos conectar con el servidor. Mostrando catálogo local.
@@ -1531,6 +1520,11 @@ export default function App() {
               </section>
             ))}
         </div>
+
+            <SiteFooter
+              showAdminLink={!isAdmin}
+              onAdminAccessClick={handleAdminAccessClick}
+            />
           </>
         )}
 

@@ -26,6 +26,7 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | ---------------------------- | ----------------------------------------------------- | ------------------ |
 | **Carrito**                  | Productos seleccionados antes del pedido por WhatsApp | Cart, bolsa, cesta |
 | **Confirmación de agregado** | Aviso breve de que el producto entró al carrito       | Toast, snackbar    |
+| **Pie de página**            | Bloque al final del **Catálogo en línea** con contacto, copyright y acceso «Ingresar admin»; no aparece en **Gestión** | Footer genérico    |
 
 
 ### Productos en estante
