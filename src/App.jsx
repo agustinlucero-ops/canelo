@@ -1368,13 +1368,16 @@ export default function App() {
     <div className="app-container">
       <header className="site-header">
         <h1 className="site-brand">
-          <img
-            className="site-brand-logo"
-            src="/images/logo-canelo-completo.svg"
-            alt="Dietética Canelo"
-            width={320}
-            height={320}
-          />
+          <picture>
+            <source srcSet="/images/logo-webp.webp" type="image/webp" />
+            <img
+              className="site-brand-logo"
+              src="/images/logo-jpeg.jpeg"
+              alt="Dietética Canelo"
+              width={304}
+              height={80}
+            />
+          </picture>
         </h1>
 
         {isAdmin && (
