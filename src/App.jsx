@@ -1,4 +1,5 @@
-﻿import { ChevronDown, ShoppingCart } from "lucide-react";
+﻿import { ShoppingCart } from "lucide-react";
+import CatalogCategorySearch from "./components/CatalogCategorySearch";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import ProductCard from "./components/ProductCard";
@@ -1439,95 +1440,20 @@ export default function App() {
             )}
 
             <section className="category-admin-section">
-          <div className="category-filter">
-            <label className="field-label" htmlFor="category-filter">
-              Buscar categoría o producto
-            </label>
-            <div className="category-filter-field">
-              <input
-                id="category-filter"
-                className="select-field"
-                type="search"
-                autoComplete="off"
-                role="combobox"
-                aria-expanded={isCategorySuggestionsOpen}
-                aria-controls="category-filter-suggestions"
-                value={categorySearch}
-                placeholder="Buscar categoría o producto..."
-                onFocus={() => setIsCategorySuggestionsOpen(true)}
-                onChange={(event) => {
-                  setCategorySearch(event.target.value);
-                  setSelectedProductId(null);
-                  setIsCategorySuggestionsOpen(true);
-                }}
-                onBlur={() => {
-                  window.setTimeout(() => {
-                    setIsCategorySuggestionsOpen(false);
-                  }, 120);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setIsCategorySuggestionsOpen(false);
-                  }
-                }}
-              />
-              <ChevronDown
-                aria-hidden="true"
-                className={`category-filter-chevron ${isCategorySuggestionsOpen ? "is-open" : ""}`}
-              />
-            </div>
-
-            {isCategorySuggestionsOpen && (hasCatalogSearchSuggestions || showSearchNoMatches) && (
-              <div
-                id="category-filter-suggestions"
-                className="category-suggestions"
-                role="listbox"
-              >
-                <button
-                  type="button"
-                  className="category-suggestion-item"
-                  role="option"
-                  onMouseDown={() => handleCategorySelect("Todas")}
-                >
-                  Todas
-                </button>
-                {catalogSearchSuggestions.categories.map((category) => (
-                  <button
-                    key={`category-${category}`}
-                    type="button"
-                    className="category-suggestion-item"
-                    role="option"
-                    onMouseDown={() => handleCategorySelect(category)}
-                  >
-                    <span className="category-suggestion-label">{category}</span>
-                    <span className="category-suggestion-meta">Categoría</span>
-                  </button>
-                ))}
-                {catalogSearchSuggestions.products.length > 0 && (
-                  <>
-                    <p className="category-suggestions-heading">Productos</p>
-                    {catalogSearchSuggestions.products.map((product) => (
-                      <button
-                        key={`product-${product.id}`}
-                        type="button"
-                        className="category-suggestion-item category-suggestion-item--product"
-                        role="option"
-                        onMouseDown={() => handleProductSelect(product)}
-                      >
-                        <span className="category-suggestion-label">{product.name}</span>
-                        <span className="category-suggestion-meta">{product.category}</span>
-                      </button>
-                    ))}
-                  </>
-                )}
-                {showSearchNoMatches && (
-                  <p className="category-suggestion-empty" role="status">
-                    Sin coincidencias
-                  </p>
-                )}
-              </div>
-            )}
-
+          <CatalogCategorySearch
+            searchValue={categorySearch}
+            onSearchChange={(value) => {
+              setCategorySearch(value);
+              setSelectedProductId(null);
+            }}
+            isOpen={isCategorySuggestionsOpen}
+            onOpenChange={setIsCategorySuggestionsOpen}
+            suggestions={catalogSearchSuggestions}
+            hasSuggestions={hasCatalogSearchSuggestions}
+            showNoMatches={showSearchNoMatches}
+            onSelectCategory={handleCategorySelect}
+            onSelectProduct={handleProductSelect}
+          >
             <div className="category-scroll" aria-label="Lista de categorías">
               <button
                 type="button"
@@ -1547,7 +1473,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-          </div>
+          </CatalogCategorySearch>
         </section>
 
 
