@@ -30,8 +30,8 @@ function applySiteUrlMeta() {
 
   upsertLink("canonical", siteUrl);
   upsertMeta("property", "og:url", siteUrl);
-  upsertMeta("property", "og:image", `${siteUrl}/images/logo.webp`);
-  upsertMeta("name", "twitter:image", `${siteUrl}/images/logo.webp`);
+  upsertMeta("property", "og:image", `${siteUrl}/images/logo-webp.webp`);
+  upsertMeta("name", "twitter:image", `${siteUrl}/images/logo-webp.webp`);
 }
 
 applySiteUrlMeta();

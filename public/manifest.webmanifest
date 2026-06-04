@@ -9,13 +9,19 @@
   "lang": "es-AR",
   "icons": [
     {
-      "src": "/images/logo.webp",
+      "src": "/images/logo-webp.webp",
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "any"
     },
     {
-      "src": "/images/logo.jpeg",
+      "src": "/images/logo-png.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo-jpeg.jpeg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
