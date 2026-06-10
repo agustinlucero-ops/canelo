@@ -1,4 +1,25 @@
-export default function QuantitySelector({ presentations, value, onChange, idPrefix }) {
+export default function QuantitySelector({
+  presentations,
+  value,
+  onChange,
+  idPrefix,
+  readOnly = false,
+}) {
+  const selected =
+    presentations.find((presentation) => presentation.label === value) ?? presentations[0];
+
+  if (readOnly) {
+    if (!selected) return null;
+
+    return (
+      <div className="presentation-selector">
+        <div className="presentation-chip-group" aria-label="Peso">
+          <span className="presentation-chip active">{selected.label}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="presentation-selector">
       <div

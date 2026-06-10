@@ -15,6 +15,8 @@ export default function GranolaLineCard({
   const displayName = normalizeProductName(line.name, line.category);
   const hasVeganVariant = line.variants?.some((variant) => variant.isVegan);
   const showPresentationsOnCard = flavorLineShowsPresentationsOnCard(line);
+  const showWeightSelector =
+    showPresentationsOnCard && line.presentations.length > 1 && !preview;
 
   const currentPresentation = useMemo(() => {
     if (!line.presentations?.length) return null;
@@ -45,13 +47,21 @@ export default function GranolaLineCard({
           <p className="product-price">{formatPrice(currentPresentation.price)}</p>
         )}
 
-        {showPresentationsOnCard && line.presentations.length > 1 && !preview && (
+        {showWeightSelector ? (
           <QuantitySelector
             idPrefix={`${line.id}-card`}
             presentations={line.presentations}
             value={selectedPresentation ?? line.presentations[0].label}
             onChange={onPresentationChange}
           />
+        ) : (
+          currentPresentation?.label && (
+            <QuantitySelector
+              presentations={line.presentations}
+              value={currentPresentation.label}
+              readOnly
+            />
+          )
         )}
 
         {preview ? (

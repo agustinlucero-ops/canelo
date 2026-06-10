@@ -43,7 +43,7 @@ describe("GranolaLineCard", () => {
     expect(html).not.toContain("Ver contenido");
   });
 
-  it("muestra selector de peso en tarjeta para mix en Mix frutos secos", () => {
+  it("permite elegir peso en tarjeta para mix con varias presentaciones", () => {
     const mixLine = {
       id: "mix-energetico",
       name: "Mix energetico",
@@ -74,13 +74,35 @@ describe("GranolaLineCard", () => {
       />
     );
 
-    expect(html).toContain("presentation-selector");
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain('aria-checked="true"');
     expect(html).toContain("100g");
     expect(html).toContain("500g");
     expect(html).toContain("$9.500");
   });
 
-  it("no muestra selector de peso en tarjeta para granolas", () => {
+  it("muestra el peso ofrecido en tarjeta para granolas", () => {
+    const html = renderToStaticMarkup(
+      <GranolaLineCard line={line} onOpenFlavorPicker={vi.fn()} />
+    );
+
+    expect(html).toContain('class="presentation-chip active"');
+    expect(html).toContain("1kg");
+    expect(html).toContain("$10.300");
+  });
+
+  it("muestra el peso ofrecido en vista previa de granolas", () => {
+    const html = renderToStaticMarkup(
+      <GranolaLineCard line={line} onOpenFlavorPicker={vi.fn()} preview />
+    );
+
+    expect(html).toContain('class="presentation-chip active"');
+    expect(html).toContain("1kg");
+    expect(html).toContain("Vista previa del catálogo");
+    expect(html).not.toContain('role="radio"');
+  });
+
+  it("muestra el peso por defecto sin selector en granolas con varias presentaciones", () => {
     const html = renderToStaticMarkup(
       <GranolaLineCard
         line={{
@@ -94,7 +116,10 @@ describe("GranolaLineCard", () => {
       />
     );
 
-    expect(html).not.toContain("presentation-selector");
+    expect(html).not.toContain('role="radio"');
+    expect(html).toContain('class="presentation-chip active"');
+    expect(html).toContain("500g");
+    expect(html).toContain("$5.000");
   });
 
   it("no muestra cartel Sin stock sobre la imagen cuando la línea está sin stock", () => {
