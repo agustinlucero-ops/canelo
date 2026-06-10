@@ -63,7 +63,7 @@ Correspondencia entre lenguaje de negocio y valor técnico:
 | Negocio              | `productType` | UI en tienda                            | Admin al crear                |
 | -------------------- | ------------- | --------------------------------------- | ----------------------------- |
 | Producto simple      | `simple`      | `ProductCard` + aclaración opcional     | “Simple”                      |
-| Línea de producto    | `flavor-line` | `GranolaLineCard` + `FlavorPickerPanel`; en **Mix frutos secos**, presentaciones también en la tarjeta | “Línea de producto (granola)” |
+| Línea de producto    | `flavor-line` | `GranolaLineCard` + `FlavorPickerPanel`; en **Mix frutos secos** y en **Mix cervecero**, presentaciones también en la tarjeta | “Línea de producto (granola)” |
 | Producto con sabores | `flavored`    | `FlavorLineCard` (select de sabor)      | “Producto con sabores (maní)” |
 
 

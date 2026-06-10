@@ -43,6 +43,79 @@ describe("GranolaLineCard", () => {
     expect(html).not.toContain("Ver contenido");
   });
 
+  it("muestra ambos pesos en tarjeta para Mix cervecero aunque el id no sea mix-cervecero", () => {
+    const mixCerveceroLine = {
+      id: "producto-importado-12",
+      name: "Mix cervecero",
+      category: "Maní suelto",
+      productType: "flavor-line",
+      image: "/images/products/mani.svg",
+      presentations: [
+        { label: "500gr", price: 6200 },
+        { label: "1kg", price: 9000 },
+      ],
+      variants: [
+        {
+          id: "mix-cervecero-variante",
+          label: "Mix cervecero",
+          image: "/images/products/mani.svg",
+          outOfStock: false,
+        },
+      ],
+    };
+
+    const html = renderToStaticMarkup(
+      <GranolaLineCard
+        line={mixCerveceroLine}
+        onOpenFlavorPicker={vi.fn()}
+        selectedPresentation="500gr"
+        onPresentationChange={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain("500gr");
+    expect(html).toContain("1kg");
+  });
+
+  it("permite elegir peso en tarjeta para Mix cervecero con varias presentaciones", () => {
+    const mixCerveceroLine = {
+      id: "mix-cervecero",
+      name: "Mix cervecero",
+      category: "Maní suelto",
+      productType: "flavor-line",
+      image: "/images/products/mani.svg",
+      presentations: [
+        { label: "500gr", price: 6200 },
+        { label: "1kg", price: 9000 },
+      ],
+      variants: [
+        {
+          id: "mix-cervecero",
+          label: "Mix cervecero",
+          image: "/images/products/mani.svg",
+          contents: ["Maní salado", "Maíz frito", "Maní saborizado"],
+          outOfStock: false,
+        },
+      ],
+    };
+
+    const html = renderToStaticMarkup(
+      <GranolaLineCard
+        line={mixCerveceroLine}
+        onOpenFlavorPicker={vi.fn()}
+        selectedPresentation="500gr"
+        onPresentationChange={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain("500gr");
+    expect(html).toContain("1kg");
+    expect(html).toContain("$6.200");
+    expect(html).not.toContain("Maní salado");
+  });
+
   it("permite elegir peso en tarjeta para mix con varias presentaciones", () => {
     const mixLine = {
       id: "mix-energetico",
