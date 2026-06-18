@@ -1759,12 +1759,13 @@ input[type="number"] {
 }
 
 .exit-confirm-dialog {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 40;
-  width: min(92vw, 420px);
+  text-align: center;
+}
+
+.exit-confirm-dialog .modal-actions {
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .cart-list {
