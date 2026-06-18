@@ -84,6 +84,11 @@ export function cartReducer(state, action) {
       };
     case "CLEAR_CART":
       return cartInitialState;
+    case "RESTORE_ITEMS":
+      return {
+        ...state,
+        items: Array.isArray(action.payload.items) ? action.payload.items : [],
+      };
     default:
       return state;
   }

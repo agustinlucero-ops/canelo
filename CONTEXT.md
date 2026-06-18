@@ -25,8 +25,20 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | Término                      | Definición                                            | Evitar             |
 | ---------------------------- | ----------------------------------------------------- | ------------------ |
 | **Carrito**                  | Productos seleccionados antes del pedido por WhatsApp | Cart, bolsa, cesta |
+| **Carrito anterior**         | Copia recuperable del último carrito enviado a WhatsApp, disponible hasta 24 h; se ofrece restaurar solo dentro del carrito vacío; el cliente puede descartar la oferta | Carrito guardado, backup |
 | **Confirmación de agregado** | Aviso breve de que el producto entró al carrito       | Toast, snackbar    |
 | **Pie de página**            | Bloque al final del **Catálogo en línea** con contacto, copyright y acceso «Ingresar admin»; no aparece en **Gestión** | Footer genérico    |
+
+
+### Navegación en tienda
+
+
+| Término                 | Definición                                                                 | Evitar              |
+| ----------------------- | -------------------------------------------------------------------------- | ------------------- |
+| **Gesto atrás**         | Botón atrás del navegador o deslizar para volver en el celular             | Back, swipe back    |
+| **Capa superpuesta**    | Panel o modal que tapa el **Catálogo en línea** (carrito, sabores, login) | Overlay, popup      |
+| **Catálogo en foco**    | **Catálogo en línea** visible sin ninguna **Capa superpuesta** abierta     | Vista base, home    |
+| **Confirmación de salida** | Aviso antes de abandonar el sitio (gesto atrás, cerrar pestaña o recargar) si el **Carrito** tiene productos; texto en atrás: «¿Querés salir de la tienda? Tu carrito todavía tiene productos.» | Alerta de salida    |
 
 
 ### Productos en estante
@@ -78,6 +90,15 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 - Un **Producto existente** se identifica por nombre normalizado (sin acentos, minúsculas).
 - Los clientes solo ven el **Catálogo en línea**, nunca un **Borrador**.
 - Agregar desde tarjeta → **Confirmación de agregado** → actualiza el **Carrito**.
+- El **Carrito** activo persiste en la pestaña mientras el cliente navega (recargas, ida y vuelta dentro de la misma sesión).
+- Al iniciar pedido por WhatsApp se conserva un **Carrito anterior** recuperable durante 24 horas.
+- Si el **Carrito** está vacío y hay **Carrito anterior** vigente, el cliente puede restaurarlo desde el propio carrito.
+- El cliente puede **Descartar** la oferta de **Carrito anterior**; no se vuelve a mostrar aunque el snapshot siga vigente hasta 24 h.
+- Cada nuevo envío a WhatsApp reemplaza el **Carrito anterior** con el carrito que se acaba de intentar mandar.
+- **Gesto atrás** con el **Carrito** abierto → cierra el carrito, mantiene los ítems, permanece en **Catálogo en línea**.
+- **Gesto atrás** con una **Capa superpuesta** abierta → cierra la capa superior (prioridad: edición de producto → login admin → panel de sabores → carrito) antes de abandonar el sitio.
+- **Gesto atrás** en **Gestión** sin capas abiertas → vuelve a **Catálogo en línea** (pestaña catálogo).
+- **Gesto atrás** en **Catálogo en foco** → puede abandonar el sitio; si el **Carrito** tiene productos, muestra **Confirmación de salida** antes (también al cerrar pestaña o recargar).
 - **Línea de producto** → uno o más **Sabores** → panel lateral → carrito con id de sabor.
 - **Producto con sabores** → uno o más **Sabores** → elección en tarjeta → carrito con id de sabor.
 - **Aclaración de estante** solo en productos `simple`; no en líneas ni productos con sabores.
@@ -110,7 +131,7 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 | [0001](docs/adr/0001-flavor-lines-jsonb.md)       | Sabores en JSONB (`variants`) |
 | [0002](docs/adr/0002-category-display-order.md)   | Orden filtros + estantes      |
 | [0003](docs/adr/0003-flavor-selection-on-card.md) | `flavor-line` vs `flavored`   |
-
+| [0004](docs/adr/0004-back-navigation-and-cart-persistence.md) | Navegación atrás y persistencia del carrito |
 
 Registro de implementación: [docs/changelog/2026-05-27-estante-y-sabores.md](docs/changelog/2026-05-27-estante-y-sabores.md).
 
@@ -125,3 +146,5 @@ Registro de implementación: [docs/changelog/2026-05-27-estante-y-sabores.md](do
 | "Vista previa" del borrador vs de tarjeta | Borrador = pantalla admin; preview de tarjeta = sin carrito                        |
 | Un solo tipo “con sabores”                | **Línea de producto** (panel rico) vs **Producto con sabores** (select en tarjeta) |
 | Keto/Veganos como categoría de alta       | Son **Filtros de tienda**; el producto vive en estante real + flags                |
+| Gesto atrás sale de la app entera         | **Capas superpuestas** y **Gestión** interceptan atrás antes de salir              |
+| "Guardar" el carrito al cerrar el drawer  | El **Carrito** persiste en `sessionStorage`; cerrar el drawer no es una acción de guardado |

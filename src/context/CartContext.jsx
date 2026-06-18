@@ -1,11 +1,31 @@
-import { createContext, useCallback, useContext, useMemo, useReducer } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from "react";
 import { cartInitialState, cartReducer, computeCartTotals } from "./cartReducer";
 import { reconcileCartItems } from "../utils/reconcileCart";
+import {
+  clearCartSession,
+  loadCartSession,
+  saveCartSession,
+} from "../utils/cartSessionStorage";
 
 const CartContext = createContext(null);
 
+function initCartState() {
+  return {
+    items: loadCartSession(),
+  };
+}
+
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, cartInitialState);
+  const [state, dispatch] = useReducer(cartReducer, undefined, initCartState);
+
+  useEffect(() => {
+    if (state.items.length === 0) {
+      clearCartSession();
+      return;
+    }
+
+    saveCartSession(state.items);
+  }, [state.items]);
 
   const totals = useMemo(() => computeCartTotals(state.items), [state.items]);
 
@@ -47,6 +67,7 @@ export function CartProvider({ children }) {
         dispatch({ type: "SET_QUANTITY", payload: { key, quantity } }),
       removeItem: (key) => dispatch({ type: "REMOVE_ITEM", payload: { key } }),
       clearCart: () => dispatch({ type: "CLEAR_CART" }),
+      restoreItems: (items) => dispatch({ type: "RESTORE_ITEMS", payload: { items } }),
       reconcileWithCatalog,
     }),
     [state.items, totals, reconcileWithCatalog]

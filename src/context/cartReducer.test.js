@@ -63,4 +63,24 @@ describe("cartReducer", () => {
       totalItems: 1,
     });
   });
+
+  it("restores items from a previous cart snapshot", () => {
+    const items = [
+      {
+        key: "almendra-1kg",
+        productId: "almendra",
+        name: "Almendra",
+        presentation: "1kg",
+        unitPrice: 1000,
+        quantity: 1,
+      },
+    ];
+
+    const state = cartReducer(cartInitialState, {
+      type: "RESTORE_ITEMS",
+      payload: { items },
+    });
+
+    expect(state.items).toEqual(items);
+  });
 });

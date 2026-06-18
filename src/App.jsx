@@ -8,9 +8,11 @@ import FlavorLineCard from "./components/FlavorLineCard";
 import FlavorPickerPanel from "./components/FlavorPickerPanel";
 import CartAddToast from "./components/CartAddToast";
 import CartDrawer from "./components/CartDrawer";
+import ExitConfirmDialog from "./components/ExitConfirmDialog";
 import SiteFooter from "./components/SiteFooter";
 import { useCart } from "./context/CartContext";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
+import useBrowserBackNavigation from "./hooks/useBrowserBackNavigation";
 import { fetchCatalogFromApi } from "./api/catalog";
 import { clearCatalogLocalStorage } from "./utils/catalogCategories";
 import { buildDisplayCategoryOrder } from "./utils/buildDisplayCategoryOrder";
@@ -61,6 +63,11 @@ import { validateAdminNewProduct } from "./utils/validateAdminNewProduct";
 import { CART_ADD_TOAST_MESSAGE } from "./utils/cartAddToast";
 import { createTimedNotice } from "./utils/timedNotice";
 import { buildAdminNewProduct } from "./utils/buildAdminNewProduct";
+import {
+  dismissPreviousCartOffer,
+  loadPreviousCartOffer,
+  savePreviousCart,
+} from "./utils/previousCartStorage";
 
 const CATEGORIES_STORAGE_KEY = "canelo.categories";
 const PRODUCTS_STORAGE_KEY = "canelo.products";
@@ -126,6 +133,7 @@ export default function App() {
     setQuantity,
     removeItem,
     clearCart,
+    restoreItems,
     reconcileWithCatalog,
   } = useCart();
   const [activeFlavorLine, setActiveFlavorLine] = useState(null);
@@ -244,7 +252,100 @@ export default function App() {
   const [editingProductDraft, setEditingProductDraft] = useState(null);
 
   const isProductEditModalOpen = Boolean(editingProductId && editingProductDraft);
-  useBodyScrollLock(isCartOpen || isFlavorPickerOpen || isAdminModalOpen || isProductEditModalOpen);
+  const [isExitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [previousCartOfferVersion, setPreviousCartOfferVersion] = useState(0);
+  useBodyScrollLock(
+    isCartOpen ||
+      isFlavorPickerOpen ||
+      isAdminModalOpen ||
+      isProductEditModalOpen ||
+      isExitConfirmOpen
+  );
+
+  const previousCartOffer = useMemo(() => {
+    if (items.length > 0) {
+      return null;
+    }
+
+    return loadPreviousCartOffer();
+  }, [items.length, previousCartOfferVersion, isCartOpen]);
+
+  const handleSavePreviousCart = useCallback((cartItems) => {
+    savePreviousCart(cartItems);
+    setPreviousCartOfferVersion((version) => version + 1);
+  }, []);
+
+  const handleDismissPreviousCart = useCallback(() => {
+    dismissPreviousCartOffer();
+    setPreviousCartOfferVersion((version) => version + 1);
+  }, []);
+
+  const handleRestorePreviousCart = useCallback(() => {
+    const offer = loadPreviousCartOffer();
+    if (!offer?.items?.length) {
+      return;
+    }
+
+    restoreItems(offer.items);
+  }, [restoreItems]);
+
+  const handleCloseNavigationLayer = useCallback(
+    (layer) => {
+      if (layer === "cart") {
+        setCartOpen(false);
+        return;
+      }
+
+      if (layer === "flavorPicker") {
+        handleCloseFlavorPicker();
+        return;
+      }
+
+      if (layer === "adminLogin") {
+        setIsAdminModalOpen(false);
+        return;
+      }
+
+      if (layer === "productEdit") {
+        setEditingProductId(null);
+        setEditingProductDraft(null);
+        setProductAdminError("");
+      }
+    },
+    [handleCloseFlavorPicker]
+  );
+
+  const handleSwitchToCatalogo = useCallback(() => {
+    setActiveView("catalogo");
+  }, []);
+
+  const handleRequestExitConfirm = useCallback(() => {
+    setExitConfirmOpen(true);
+  }, []);
+
+  const handleStayOnSite = useCallback(() => {
+    setExitConfirmOpen(false);
+  }, []);
+
+  const handleLeaveSite = useCallback(() => {
+    setExitConfirmOpen(false);
+    window.history.back();
+  }, []);
+
+  useBrowserBackNavigation({
+    layers: {
+      productEdit: isProductEditModalOpen,
+      adminLogin: isAdminModalOpen,
+      flavorPicker: isFlavorPickerOpen,
+      cart: isCartOpen,
+    },
+    isAdmin,
+    activeView,
+    cartItemCount: totals.totalItems,
+    onCloseLayer: handleCloseNavigationLayer,
+    onSwitchToCatalogo: handleSwitchToCatalogo,
+    onConfirmExit: handleRequestExitConfirm,
+  });
 
   const newProductDraftId = useMemo(
     () => slugify(newProductName.trim()) || "producto-nuevo",
@@ -1635,6 +1736,10 @@ export default function App() {
         setQuantity={setQuantity}
         removeItem={removeItem}
         clearCart={clearCart}
+        onSavePreviousCart={handleSavePreviousCart}
+        previousCartOffer={previousCartOffer}
+        onRestorePreviousCart={handleRestorePreviousCart}
+        onDismissPreviousCart={handleDismissPreviousCart}
       />
 
       <FlavorPickerPanel
@@ -1706,6 +1811,12 @@ export default function App() {
       )}
 
       <CartAddToast message={cartAddToastMessage} />
+
+      <ExitConfirmDialog
+        isOpen={isExitConfirmOpen}
+        onStay={handleStayOnSite}
+        onLeave={handleLeaveSite}
+      />
     </div>
   );
 }

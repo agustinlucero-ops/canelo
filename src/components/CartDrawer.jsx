@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { createOrder } from "../api/orders";
+import { runWhatsAppCheckout } from "../utils/cartWhatsAppCheckout";
 import { buildWhatsAppMessage, formatPrice, openWhatsAppLink } from "../utils/whatsapp";
 
 const WHATSAPP_PHONE =
@@ -14,6 +15,10 @@ export default function CartDrawer({
   setQuantity,
   removeItem,
   clearCart,
+  onSavePreviousCart,
+  previousCartOffer,
+  onRestorePreviousCart,
+  onDismissPreviousCart,
 }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -21,7 +26,13 @@ export default function CartDrawer({
   const handleWhatsAppCheckout = (event) => {
     event.preventDefault();
 
-    if (!items.length) {
+    const didCheckout = runWhatsAppCheckout({
+      items,
+      onSavePreviousCart,
+      clearCart,
+    });
+
+    if (!didCheckout) {
       return;
     }
 
@@ -41,7 +52,6 @@ export default function CartDrawer({
       console.warn("[orders] No se pudo registrar el pedido:", err);
     });
 
-    clearCart();
     setCustomerName("");
     setCustomerPhone("");
     onClose();
@@ -59,7 +69,22 @@ export default function CartDrawer({
         </header>
 
         {items.length === 0 ? (
-          <p className="empty-state">Todavia no agregaste productos.</p>
+          <div className="empty-state">
+            <p>Todavia no agregaste productos.</p>
+            {previousCartOffer && (
+              <div className="previous-cart-offer" role="region" aria-label="Carrito anterior">
+                <p>Tenés un carrito anterior.</p>
+                <div className="previous-cart-offer-actions">
+                  <button type="button" className="button primary" onClick={onRestorePreviousCart}>
+                    Restaurar
+                  </button>
+                  <button type="button" className="button" onClick={onDismissPreviousCart}>
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             <ul className="cart-list">
