@@ -39,7 +39,20 @@ describe("FlavorLineCard", () => {
     expect(html).not.toContain('aria-label="Sabor"');
   });
 
-  it("muestra selector de presentación solo si hay más de una", () => {
+  it("muestra la presentación fija cuando el producto con sabores tiene un solo peso", () => {
+    const html = renderToStaticMarkup(<FlavorLineCard line={line} onAddToCart={vi.fn()} />);
+    const saborIndex = html.indexOf('aria-label="Sabor"');
+    const pesoIndex = html.indexOf('aria-label="Peso"');
+
+    expect(html).toContain("1kg");
+    expect(html).toContain('aria-label="Peso"');
+    expect(html).toContain('class="presentation-chip active"');
+    expect(html).not.toContain('role="radiogroup"');
+    expect(saborIndex).toBeGreaterThan(-1);
+    expect(pesoIndex).toBeGreaterThan(saborIndex);
+  });
+
+  it("muestra selector interactivo de presentación cuando hay más de una", () => {
     const lineMultiPres = {
       ...line,
       presentations: [
@@ -51,13 +64,10 @@ describe("FlavorLineCard", () => {
     const htmlMulti = renderToStaticMarkup(
       <FlavorLineCard line={lineMultiPres} onAddToCart={vi.fn()} />
     );
-    const htmlSingle = renderToStaticMarkup(
-      <FlavorLineCard line={line} onAddToCart={vi.fn()} />
-    );
 
     expect(htmlMulti).toContain("500g");
     expect(htmlMulti).toContain("1kg");
-    expect(htmlSingle).not.toContain("presentation-selector");
+    expect(htmlMulti).toContain('role="radiogroup"');
     expect(htmlMulti).toContain("presentation-selector");
   });
 

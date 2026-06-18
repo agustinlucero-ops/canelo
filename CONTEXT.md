@@ -47,7 +47,7 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | Término                   | Definición                                                                                 | Evitar                       |
 | ------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------- |
 | **Línea de producto**     | Ítem que agrupa varios sabores bajo una marca (ej. Granola CUCA); panel lateral de sabores | Producto padre, combo        |
-| **Producto con sabores**  | Un nombre en estante y sabores elegibles en la tarjeta (ej. Maní saborizado)               | Variante, subproducto        |
+| **Producto con sabores**  | Un nombre en estante y sabores elegibles en la tarjeta (ej. Maní saborizado); la **Presentación** siempre visible | Variante, subproducto        |
 | **Sabor**                 | Opción dentro de una línea o de un producto con sabores                                    | Variante, presentación       |
 | **Aclaración de estante** | Texto corto opcional bajo el nombre en producto **simple** (máx. 50 caracteres)            | Subtítulo, descripción larga |
 | **Indicación de sin stock en tarjeta** | En la tienda, el producto o línea sin stock se comunica en el botón principal de la tarjeta («Sin stock»), no con cartel sobre la foto | No disponible (en botón de catálogo) |
@@ -60,7 +60,7 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | ---------------------------- | --------------------------------------------------------------------------- | ------------------------- |
 | **Categoría de estante**     | Dónde vive el producto (Granolas, Frutos secos, Mix frutos secos); orden editable en Gestión | Sección, rubro            |
 | **Mix frutos secos**         | Estante de los mixes comerciales (energético, clásico, etc.), cada uno como producto propio | Subcategoría, combo       |
-| **Presentación**             | Peso o formato de venta (100g, 500g, 1kg) con su precio; distinto del **Sabor** | Peso, tamaño, variante    |
+| **Presentación**             | Peso o formato de venta (100g, 500g, 1kg) con su precio; distinto del **Sabor**; en **Producto con sabores**, una sola presentación se muestra fija; varias permiten elegir | Peso, tamaño, variante    |
 | **Filtro de tienda**         | Criterio transversal (Sin tacc, Keto, Veganos); fijo al inicio del catálogo | Chip, tag como sustantivo |
 | **Tipo de archivo** (import) | Catálogo completo vs solo productos nuevos                                  | Modo, estrategia de diff  |
 
@@ -90,6 +90,10 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 - Un **Producto existente** se identifica por nombre normalizado (sin acentos, minúsculas).
 - Los clientes solo ven el **Catálogo en línea**, nunca un **Borrador**.
 - Agregar desde tarjeta → **Confirmación de agregado** → actualiza el **Carrito**.
+- En **Producto con sabores**, la **Presentación** siempre es visible en la tarjeta, aunque haya una sola.
+- Los pesos faltantes de un **Producto con sabores** se cargan después en **Gestión**; el arreglo de visibilidad no depende de tener varias **Presentaciones** ya cargadas.
+- Una sola **Presentación** en **Producto con sabores** → chip fijo de solo lectura; dos o más → selector interactivo como Almohaditas u Ositos.
+- En la tarjeta de **Producto con sabores**, el selector de **Sabor** queda arriba y la **Presentación** abajo.
 - El **Carrito** activo persiste en la pestaña mientras el cliente navega (recargas, ida y vuelta dentro de la misma sesión).
 - Al iniciar pedido por WhatsApp se conserva un **Carrito anterior** recuperable durante 24 horas.
 - Si el **Carrito** está vacío y hay **Carrito anterior** vigente, el cliente puede restaurarlo desde el propio carrito.
@@ -143,8 +147,9 @@ Registro de implementación: [docs/changelog/2026-05-27-estante-y-sabores.md](do
 | Antes                                     | Resolución                                                                         |
 | ----------------------------------------- | ---------------------------------------------------------------------------------- |
 | "Subir" = importar o publicar             | **Importación** → borrador; **Publicar** → en línea                                |
-| "Vista previa" del borrador vs de tarjeta | Borrador = pantalla admin; preview de tarjeta = sin carrito                        |
+| "Vista previa" del borrador vs de tarjeta | Borrador = pantalla admin; preview de tarjeta = sin carrito ni sabor/peso (solo imagen y nombre) |
 | Un solo tipo “con sabores”                | **Línea de producto** (panel rico) vs **Producto con sabores** (select en tarjeta) |
 | Keto/Veganos como categoría de alta       | Son **Filtros de tienda**; el producto vive en estante real + flags                |
 | Gesto atrás sale de la app entera         | **Capas superpuestas** y **Gestión** interceptan atrás antes de salir              |
+| Harina sin piel/con piel como **Sabor** vs producto **simple** | Pendiente de revisión con el dueño; por ahora se mantiene `flavored` y solo se corrige visibilidad de **Presentación** |
 | "Guardar" el carrito al cerrar el drawer  | El **Carrito** persiste en `sessionStorage`; cerrar el drawer no es una acción de guardado |

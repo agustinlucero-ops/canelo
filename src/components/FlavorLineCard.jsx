@@ -87,13 +87,22 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
               </select>
             </label>
 
-            {line.presentations.length > 1 && (
+            {line.presentations.length > 1 ? (
               <QuantitySelector
                 idPrefix={`${line.id}-line`}
                 presentations={line.presentations}
                 value={selectedPresentation}
                 onChange={setSelectedPresentation}
               />
+            ) : (
+              currentPresentation?.label && (
+                <QuantitySelector
+                  idPrefix={`${line.id}-line`}
+                  presentations={line.presentations}
+                  value={currentPresentation.label}
+                  readOnly
+                />
+              )
             )}
 
             <button
