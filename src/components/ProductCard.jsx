@@ -1,6 +1,6 @@
-import { Vegan } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
+import ProductNutritionBadges from "./ProductNutritionBadges";
 import { formatPrice } from "../utils/whatsapp";
 import ProductTitleBlock from "./ProductTitleBlock";
 import { normalizeProductName } from "../utils/productName";
@@ -26,7 +26,6 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
     () => normalizeProductName(product.name, product.category),
     [product.category, product.name]
   );
-  const hasNutritionBadges = product.isVegan || product.isKeto || product.isGlutenFree;
 
   const handleAdd = () => {
     if (product.outOfStock) return;
@@ -42,31 +41,17 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
           className="product-image"
           loading="lazy"
         />
-        {hasNutritionBadges && (
-          <div className="product-floating-badges" aria-label="Insignias del producto">
-            {product.isVegan && (
-              <span className="vegan-badge" aria-label="Producto vegano">
-                <Vegan aria-hidden="true" />
-              </span>
-            )}
-            {product.isKeto && (
-              <span className="keto-badge" aria-label="Producto apto keto">
-                <img src="/images/keto-badge.svg" alt="" aria-hidden="true" />
-              </span>
-            )}
-            {product.isGlutenFree && (
-              <span className="gluten-free-badge" aria-label="Producto sin TACC">
-                <img src="/images/gluten-free.svg" alt="" aria-hidden="true" />
-              </span>
-            )}
-          </div>
-        )}
       </div>
       <div className="product-content">
         <ProductTitleBlock
           name={product.name}
           category={product.category}
           shelfNote={product.shelfNote}
+        />
+        <ProductNutritionBadges
+          isVegan={product.isVegan}
+          isKeto={product.isKeto}
+          isGlutenFree={product.isGlutenFree}
         />
         <p className="product-price">{formatPrice(currentPresentation.price)}</p>
 

@@ -53,6 +53,8 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | **Indicación de sin stock en tarjeta** | En la tienda, el producto o línea sin stock se comunica en el botón principal de la tarjeta («Sin stock»), no con cartel sobre la foto | No disponible (en botón de catálogo) |
 | **Foto de línea** | Imagen principal del producto o de la **Línea de producto**; la usan todos los **Sabores** salvo override | Foto del producto, imagen padre |
 | **Foto del sabor** | Imagen opcional de un **Sabor** concreto en **Línea de producto**; si falta, se muestra la **Foto de línea**; en **Gestión** el campo queda colapsado salvo que el dueño pida override | Foto por variante, imagen del sabor |
+| **Insignia nutricional** | Icono de Veganos, Keto o Sin tacc en tarjeta o chip de **Sabor**; no tapa la **Foto de línea** | Badge, tag visual |
+| **Insignia por sabor** | Insignia nutricional ligada a un **Sabor** concreto (ej. Stevia vegana), no a toda la **Línea de producto** | Badge agregado, opción vegana |
 
 
 ### Categorías y navegación
@@ -106,6 +108,9 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 - **Gesto atrás** en **Gestión** sin capas abiertas → vuelve a **Catálogo en línea** (pestaña catálogo).
 - **Gesto atrás** en **Catálogo en foco** → puede abandonar el sitio; si el **Carrito** tiene productos, muestra **Confirmación de salida** antes (también al cerrar pestaña o recargar).
 - **Línea de producto** → uno o más **Sabores** → panel lateral → carrito con id de sabor.
+- **Insignia nutricional** en **Línea de producto** → solo como **Insignia por sabor** en el panel de sabores; la tarjeta de estante no muestra insignias agregadas.
+- **Insignia nutricional** en producto **simple** → fila propia en la tarjeta, entre nombre y precio; nunca sobre la **Foto de línea**.
+- **Insignia nutricional** en **Producto con sabores** → fila propia entre nombre y precio según el **Sabor** elegido en la tarjeta; sin insignias agregadas ni sobre la **Foto de línea**.
 - **Producto con sabores** → uno o más **Sabores** → elección en tarjeta → carrito con id de sabor.
 - **Foto de línea** → compartida por todos los **Sabores**; en **Producto con sabores** es la única foto.
 - **Foto del sabor** → solo en **Línea de producto**, y solo cuando el dueño la carga explícitamente.

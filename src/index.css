@@ -1479,40 +1479,6 @@ p {
   background: #ecf4ec;
 }
 
-.product-floating-badges {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  z-index: 1;
-}
-
-.product-floating-badges .vegan-badge,
-.product-floating-badges .keto-badge,
-.product-floating-badges .gluten-free-badge {
-  min-height: 1.45rem;
-  padding: 0.15rem 0.4rem;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.12);
-}
-
-.product-floating-badges .vegan-badge svg {
-  width: 0.8rem;
-  height: 0.8rem;
-}
-
-.product-floating-badges .keto-badge img {
-  width: 1.05rem;
-  height: 1.05rem;
-}
-
-.product-floating-badges .gluten-free-badge img {
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
 .product-stock-badge {
   position: absolute;
   top: 0.5rem;

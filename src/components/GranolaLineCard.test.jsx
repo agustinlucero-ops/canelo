@@ -22,6 +22,36 @@ describe("GranolaLineCard", () => {
     ],
   };
 
+  it("no muestra insignias nutricionales en la tarjeta aunque algún sabor sea vegano", () => {
+    const lineWithVeganSabor = {
+      ...line,
+      variants: [
+        {
+          id: "cuca-tradicional",
+          label: "Tradicional",
+          image: "/images/products/granola.svg",
+          isVegan: false,
+          outOfStock: false,
+        },
+        {
+          id: "cuca-stevia-vegana",
+          label: "Stevia vegana",
+          image: "/images/products/granola.svg",
+          isVegan: true,
+          outOfStock: false,
+        },
+      ],
+    };
+
+    const html = renderToStaticMarkup(
+      <GranolaLineCard line={lineWithVeganSabor} onOpenFlavorPicker={vi.fn()} />
+    );
+
+    expect(html).not.toContain("product-floating-badges");
+    expect(html).not.toContain("vegan-badge");
+    expect(html).not.toContain('aria-label="Incluye opción vegana"');
+  });
+
   it("abre el panel de sabores en lugar de agregar directo al carrito", () => {
     const html = renderToStaticMarkup(
       <GranolaLineCard line={line} onOpenFlavorPicker={vi.fn()} />

@@ -1,4 +1,3 @@
-import { Vegan } from "lucide-react";
 import { useMemo } from "react";
 import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
@@ -13,7 +12,6 @@ export default function GranolaLineCard({
   onPresentationChange,
 }) {
   const displayName = normalizeProductName(line.name, line.category);
-  const hasVeganVariant = line.variants?.some((variant) => variant.isVegan);
   const showPresentationsOnCard = flavorLineShowsPresentationsOnCard(line);
   const showWeightSelector =
     showPresentationsOnCard && line.presentations.length > 1 && !preview;
@@ -33,13 +31,6 @@ export default function GranolaLineCard({
     <article className="product-card granola-line-card">
       <div className="product-media">
         <img src={line.image} alt={displayName} className="product-image" loading="lazy" />
-        {hasVeganVariant && (
-          <div className="product-floating-badges" aria-label="Insignias del producto">
-            <span className="vegan-badge" aria-label="Incluye opción vegana">
-              <Vegan aria-hidden="true" />
-            </span>
-          </div>
-        )}
       </div>
       <div className="product-content">
         <h3>{displayName}</h3>

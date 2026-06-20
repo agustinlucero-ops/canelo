@@ -1,6 +1,6 @@
-import { Vegan } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
+import ProductNutritionBadges from "./ProductNutritionBadges";
 import { formatPrice } from "../utils/whatsapp";
 import { normalizeProductName } from "../utils/productName";
 import { getFirstAvailableVariant } from "../utils/flavorLineCart";
@@ -33,7 +33,6 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
   );
 
   const displayName = normalizeProductName(line.name, line.category);
-  const hasVeganVariant = line.variants?.some((variant) => variant.isVegan);
   const canAdd =
     !preview &&
     selectedVariant &&
@@ -51,16 +50,14 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
     <article className="product-card flavor-line-card">
       <div className="product-media">
         <img src={line.image} alt={displayName} className="product-image" loading="lazy" />
-        {hasVeganVariant && (
-          <div className="product-floating-badges" aria-label="Insignias del producto">
-            <span className="vegan-badge" aria-label="Incluye opción vegana">
-              <Vegan aria-hidden="true" />
-            </span>
-          </div>
-        )}
       </div>
       <div className="product-content">
         <h3>{displayName}</h3>
+        <ProductNutritionBadges
+          isVegan={selectedVariant?.isVegan}
+          isKeto={line.isKeto}
+          isGlutenFree={line.isGlutenFree}
+        />
         {currentPresentation && (
           <p className="product-price">{formatPrice(currentPresentation.price)}</p>
         )}

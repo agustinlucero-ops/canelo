@@ -1,7 +1,22 @@
+/**
+ * @vitest-environment happy-dom
+ */
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import FlavorLineCard from "./FlavorLineCard";
+
+function renderFlavorLineCard(ui) {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const root = createRoot(container);
+  act(() => {
+    root.render(ui);
+  });
+  return { container, root };
+}
 
 describe("FlavorLineCard", () => {
   const line = {
@@ -16,6 +31,107 @@ describe("FlavorLineCard", () => {
       { id: "mani-sabor-2", label: "Picante", image: "/images/products/mani.svg", outOfStock: false },
     ],
   };
+
+  it("no muestra insignia vegana cuando el sabor elegido por defecto no es vegano", () => {
+    const html = renderToStaticMarkup(
+      <FlavorLineCard
+        line={{
+          ...line,
+          variants: [
+            {
+              id: "mani-tradicional",
+              label: "Tradicional",
+              image: "/images/products/mani.svg",
+              isVegan: false,
+              outOfStock: false,
+            },
+            {
+              id: "mani-vegano",
+              label: "Vegano",
+              image: "/images/products/mani.svg",
+              isVegan: true,
+              outOfStock: false,
+            },
+          ],
+        }}
+        onAddToCart={vi.fn()}
+      />
+    );
+
+    expect(html).not.toContain("product-floating-badges");
+    expect(html).not.toContain('aria-label="Producto vegano"');
+  });
+
+  it("muestra insignia vegana entre nombre y precio cuando el sabor elegido es vegano", () => {
+    const html = renderToStaticMarkup(
+      <FlavorLineCard
+        line={{
+          ...line,
+          variants: [
+            {
+              id: "mani-vegano",
+              label: "Vegano",
+              image: "/images/products/mani.svg",
+              isVegan: true,
+              outOfStock: false,
+            },
+          ],
+        }}
+        onAddToCart={vi.fn()}
+      />
+    );
+
+    expect(html).not.toContain("product-floating-badges");
+    expect(html).toContain('class="product-badges"');
+    expect(html).toContain('aria-label="Producto vegano"');
+
+    const badgesIndex = html.indexOf('class="product-badges"');
+    const priceIndex = html.indexOf('class="product-price"');
+    expect(badgesIndex).toBeGreaterThan(-1);
+    expect(priceIndex).toBeGreaterThan(badgesIndex);
+  });
+
+  it("actualiza la insignia vegana al cambiar el sabor elegido", () => {
+    const flavoredLine = {
+      id: "mani-saborizado",
+      name: "Mani saborizado",
+      category: "Maní suelto",
+      productType: "flavored",
+      image: "/images/products/mani.svg",
+      presentations: [{ label: "1kg", price: 7500 }],
+      variants: [
+        {
+          id: "mani-tradicional",
+          label: "Tradicional",
+          image: "/images/products/mani.svg",
+          isVegan: false,
+          outOfStock: false,
+        },
+        {
+          id: "mani-vegano",
+          label: "Vegano",
+          image: "/images/products/mani.svg",
+          isVegan: true,
+          outOfStock: false,
+        },
+      ],
+    };
+
+    const { container } = renderFlavorLineCard(
+      <FlavorLineCard line={flavoredLine} onAddToCart={vi.fn()} />
+    );
+
+    expect(container.querySelector('[aria-label="Producto vegano"]')).toBeNull();
+
+    act(() => {
+      container.querySelector('select[aria-label="Sabor"]').value = "mani-vegano";
+      container
+        .querySelector('select[aria-label="Sabor"]')
+        .dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    expect(container.querySelector('[aria-label="Producto vegano"]')).not.toBeNull();
+  });
 
   it("muestra selector de sabor y agregar al carrito en la tarjeta", () => {
     const html = renderToStaticMarkup(
