@@ -3,6 +3,7 @@ import { Vegan, X } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
 import { formatPrice } from "../utils/whatsapp";
 import { getFirstAvailableVariant } from "../utils/flavorLineCart";
+import { resolveVariantImage } from "../utils/variantImage";
 
 export default function FlavorPickerPanel({
   isOpen,
@@ -115,7 +116,7 @@ export default function FlavorPickerPanel({
           {selectedVariant && (
             <section className="flavor-detail" aria-live="polite">
               <img
-                src={selectedVariant.image || line.image}
+                src={resolveVariantImage(selectedVariant, line)}
                 alt={selectedVariant.label}
                 className="flavor-detail-image"
               />

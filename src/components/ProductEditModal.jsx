@@ -48,6 +48,7 @@ export default function ProductEditModal({
   onAddVariantToDraft,
   onRemoveVariantFromDraft,
   onEditVariantImageFile,
+  onClearVariantImage,
   isActionDisabled = false,
   isSaving = false,
 }) {
@@ -90,6 +91,7 @@ export default function ProductEditModal({
         onRemoveVariantFromDraft={onRemoveVariantFromDraft}
         onEditProductImageFile={onEditProductImageFile}
         onEditVariantImageFile={onEditVariantImageFile}
+        onClearVariantImage={onClearVariantImage}
         isActionDisabled={isActionDisabled}
         isSaving={isSaving}
       />

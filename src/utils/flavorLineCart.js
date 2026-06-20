@@ -1,3 +1,5 @@
+import { resolveVariantImage } from "./variantImage.js";
+
 export function buildFlavorLineCartItem({ line, variant, presentation, quantity = 1 }) {
   return {
     key: `${variant.id}-${presentation.label}`,
@@ -5,7 +7,7 @@ export function buildFlavorLineCartItem({ line, variant, presentation, quantity 
     lineId: line.id,
     flavorLabel: variant.label,
     name: `${line.name} — ${variant.label}`,
-    image: variant.image || line.image,
+    image: resolveVariantImage(variant, line),
     presentation: presentation.label,
     unitPrice: presentation.price,
     quantity,

@@ -1,5 +1,7 @@
 import { Trash2, X } from "lucide-react";
 import GranolaLineCard from "./GranolaLineCard";
+import AdminVariantsFields from "./AdminVariantsFields";
+import { normalizeVariantImageForStorage } from "../utils/variantImage";
 
 function draftToPreviewLine(draft) {
   const presentations = draft.presentations
@@ -14,7 +16,7 @@ function draftToPreviewLine(draft) {
   const variants = (draft.variants ?? []).map((variant, index) => ({
     id: String(variant.id ?? "").trim() || `sabor-${index + 1}`,
     label: String(variant.label ?? "").trim() || "Sabor",
-    image: String(variant.image ?? "").trim() || draft.image,
+    image: normalizeVariantImageForStorage(variant.image, draft.image),
     description: String(variant.description ?? "").trim(),
     contents: String(variant.contentsText ?? "")
       .split("\n")
@@ -32,7 +34,7 @@ function draftToPreviewLine(draft) {
     image: draft.image.trim() || "/images/products/granola.svg",
     outOfStock: Boolean(draft.outOfStock),
     presentations: presentations.length ? presentations : [{ label: "1kg", price: 1 }],
-    variants: variants.length ? variants : [{ id: "sabor-1", label: "Sabor", image: draft.image, contents: [] }],
+    variants: variants.length ? variants : [{ id: "sabor-1", label: "Sabor", image: "", contents: [] }],
   };
 }
 
@@ -51,6 +53,7 @@ export default function FlavorLineEditModal({
   onRemoveVariantFromDraft,
   onEditProductImageFile,
   onEditVariantImageFile,
+  onClearVariantImage,
   isActionDisabled = false,
   isSaving = false,
 }) {
@@ -196,80 +199,19 @@ export default function FlavorLineEditModal({
             + Añadir presentación
           </button>
 
-          <p className="field-label">Sabores</p>
-          {(draft.variants ?? []).map((variant, index) => (
-            <fieldset key={`${draft.id}-variant-${variant.id || index}`} className="flavor-variant-editor">
-              <legend>Sabor {index + 1}</legend>
-              <input
-                type="text"
-                value={variant.label}
-                onChange={(event) => onEditVariantField(index, "label", event.target.value)}
-                placeholder="Nombre del sabor"
-                disabled={isActionDisabled}
-              />
-              <input
-                type="text"
-                value={variant.image}
-                onChange={(event) => onEditVariantField(index, "image", event.target.value)}
-                placeholder="Imagen del sabor"
-                disabled={isActionDisabled}
-              />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => onEditVariantImageFile(index, event)}
-                disabled={isActionDisabled}
-              />
-              <textarea
-                value={variant.description}
-                onChange={(event) => onEditVariantField(index, "description", event.target.value)}
-                placeholder="Descripción"
-                rows={2}
-                disabled={isActionDisabled}
-              />
-              <textarea
-                value={variant.contentsText}
-                onChange={(event) => onEditVariantField(index, "contentsText", event.target.value)}
-                placeholder="Contiene (un ingrediente por línea)"
-                rows={3}
-                disabled={isActionDisabled}
-              />
-              <label className="stock-toggle">
-                <input
-                  type="checkbox"
-                  checked={variant.isVegan}
-                  onChange={(event) => onEditVariantField(index, "isVegan", event.target.checked)}
-                  disabled={isActionDisabled}
-                />
-                Sabor vegano
-              </label>
-              <label className="stock-toggle">
-                <input
-                  type="checkbox"
-                  checked={variant.outOfStock}
-                  onChange={(event) => onEditVariantField(index, "outOfStock", event.target.checked)}
-                  disabled={isActionDisabled}
-                />
-                Sabor sin stock
-              </label>
-              <button
-                type="button"
-                className="button"
-                onClick={() => onRemoveVariantFromDraft(index)}
-                disabled={isActionDisabled || (draft.variants?.length ?? 0) <= 1}
-              >
-                Quitar sabor
-              </button>
-            </fieldset>
-          ))}
-          <button
-            type="button"
-            className="button"
-            onClick={onAddVariantToDraft}
+          <AdminVariantsFields
+            variants={draft.variants ?? []}
+            productType="flavor-line"
+            lineImage={draft.image}
+            onVariantChange={onEditVariantField}
+            onVariantImageFile={onEditVariantImageFile}
+            onClearVariantImage={onClearVariantImage}
+            onAddVariant={onAddVariantToDraft}
+            onRemoveVariant={onRemoveVariantFromDraft}
             disabled={isActionDisabled}
-          >
-            + Añadir sabor
-          </button>
+            showVariantMetaFields
+            onVariantMetaChange={onEditVariantField}
+          />
 
           {productAdminError && <p className="admin-error">{productAdminError}</p>}
 

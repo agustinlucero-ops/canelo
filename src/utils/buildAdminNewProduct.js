@@ -7,12 +7,12 @@ import {
   sanitizeVariants,
 } from "./sanitizeCatalog";
 
-function buildPlaceholderVariants(id, image) {
+function buildPlaceholderVariants(id) {
   return [
     {
       id: `${id}-sabor-1`,
       label: "Sabor 1",
-      image,
+      image: "",
       description: "",
       contents: [],
       isVegan: false,
@@ -21,7 +21,7 @@ function buildPlaceholderVariants(id, image) {
     {
       id: `${id}-sabor-2`,
       label: "Sabor 2",
-      image,
+      image: "",
       description: "",
       contents: [],
       isVegan: false,
@@ -50,11 +50,15 @@ export function buildAdminNewProduct({
       : PRODUCT_TYPE_FLAVOR_LINE
     : PRODUCT_TYPE_SIMPLE;
   const normalizedShelfNote = sanitizeShelfNote(shelfNote);
-  const sanitizedVariants = sanitizeVariants(variants, { defaultImage: image });
+  const sanitizedVariants = sanitizeVariants(variants, {
+    defaultImage: image,
+    lineImage: image,
+    productType: productHasFlavorVariants(normalizedType) ? normalizedType : null,
+  });
   const resolvedVariants = productHasFlavorVariants(normalizedType)
     ? sanitizedVariants.length
       ? sanitizedVariants
-      : buildPlaceholderVariants(id, image)
+      : buildPlaceholderVariants(id)
     : [];
 
   return {

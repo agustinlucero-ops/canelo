@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from "../src/utils/validateShelfCategoryReorder.js";
 import { sanitizeShelfNote } from "../src/utils/sanitizeCatalog.js";
+import { normalizeVariantImageForStorage } from "../src/utils/variantImage.js";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 const DEFAULT_CATEGORY = "Sin tacc";
@@ -64,14 +65,22 @@ function normalizeProductType(value) {
   return PRODUCT_TYPE_SIMPLE;
 }
 
-function normalizeVariants(variants) {
+function normalizeVariants(variants, { lineImage = DEFAULT_PRODUCT_IMAGE, productType = null } = {}) {
   if (!Array.isArray(variants)) return [];
+  const normalizedLineImage = normalizeText(lineImage) || DEFAULT_PRODUCT_IMAGE;
 
   return variants
     .map((variant, index) => {
       const id = normalizeText(variant?.id) || `sabor-${index + 1}`;
       const label = normalizeText(variant?.label);
-      const image = normalizeText(variant?.image) || DEFAULT_PRODUCT_IMAGE;
+      let image;
+      if (productType === PRODUCT_TYPE_FLAVOR_LINE) {
+        image = normalizeVariantImageForStorage(variant?.image, normalizedLineImage);
+      } else if (productType === PRODUCT_TYPE_FLAVORED) {
+        image = "";
+      } else {
+        image = normalizeText(variant?.image) || DEFAULT_PRODUCT_IMAGE;
+      }
       const description = normalizeText(variant?.description);
       const contents = Array.isArray(variant?.contents)
         ? variant.contents.map((entry) => normalizeText(entry)).filter(Boolean)
@@ -397,8 +406,14 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
       : normalizeProductType(baseProduct?.productType);
   const normalizedVariants =
     input?.variants !== undefined
-      ? normalizeVariants(input.variants)
-      : normalizeVariants(baseProduct?.variants);
+      ? normalizeVariants(input.variants, {
+          lineImage: normalizedImage,
+          productType: normalizedProductType,
+        })
+      : normalizeVariants(baseProduct?.variants, {
+          lineImage: normalizedImage,
+          productType: normalizedProductType,
+        });
 
   if (!normalizedName) {
     throw new CatalogError("invalid_product_name", "El nombre del producto es obligatorio.");

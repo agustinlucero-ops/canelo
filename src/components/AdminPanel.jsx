@@ -232,6 +232,7 @@ export default function AdminPanel({
   onAddNewProductVariant,
   onRemoveNewProductVariant,
   onNewProductVariantImageFile,
+  onClearNewProductVariantImage,
   newProductImage,
   onNewProductImageChange,
   newProductIsVegan,
@@ -522,17 +523,7 @@ export default function AdminPanel({
                 : "Presentaciones y precios"
             }
           />
-          {productHasFlavorVariants(newProductType) && (
-            <AdminVariantsFields
-              variants={newProductVariants}
-              productType={newProductType}
-              onVariantChange={onNewProductVariantChange}
-              onVariantImageFile={onNewProductVariantImageFile}
-              onAddVariant={onAddNewProductVariant}
-              onRemoveVariant={onRemoveNewProductVariant}
-              disabled={isActionDisabled}
-            />
-          )}
+          <p className="field-label">Foto de línea</p>
           <input
             type="text"
             value={newProductImage}
@@ -546,6 +537,19 @@ export default function AdminPanel({
             onChange={onNewProductImageFile}
             disabled={isActionDisabled}
           />
+          {productHasFlavorVariants(newProductType) && (
+            <AdminVariantsFields
+              variants={newProductVariants}
+              productType={newProductType}
+              lineImage={newProductImage}
+              onVariantChange={onNewProductVariantChange}
+              onVariantImageFile={onNewProductVariantImageFile}
+              onClearVariantImage={onClearNewProductVariantImage}
+              onAddVariant={onAddNewProductVariant}
+              onRemoveVariant={onRemoveNewProductVariant}
+              disabled={isActionDisabled}
+            />
+          )}
           <label className="stock-toggle">
             <input
               type="checkbox"

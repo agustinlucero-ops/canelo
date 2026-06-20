@@ -884,6 +884,14 @@ export default function App() {
     reader.readAsDataURL(selectedFile);
   };
 
+  const handleClearNewProductVariantImage = (index) => {
+    setNewProductVariants((current) =>
+      current.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, image: "" } : variant
+      )
+    );
+  };
+
   const handleAddProduct = async () => {
     if (!ensureCatalogApiWritable()) return;
 
@@ -915,6 +923,7 @@ export default function App() {
     );
 
     const hasFlavorVariants = productHasFlavorVariants(newProductType);
+    const lineImage = newProductImage.trim() || DEFAULT_PRODUCT_IMAGE;
     const sanitizedVariants = hasFlavorVariants
       ? sanitizeVariants(
           newProductVariants.map((variant) => ({
@@ -929,7 +938,7 @@ export default function App() {
             isVegan: variant.isVegan,
             outOfStock: variant.outOfStock,
           })),
-          { defaultImage: newProductImage.trim() || DEFAULT_PRODUCT_IMAGE }
+          { defaultImage: lineImage, lineImage, productType: newProductType }
         )
       : [];
 
@@ -1103,7 +1112,7 @@ export default function App() {
           {
             id: `${currentDraft.id}-sabor-${nextIndex}`,
             label: "",
-            image: currentDraft.image,
+            image: "",
             description: "",
             contentsText: "",
             isVegan: false,
@@ -1122,6 +1131,10 @@ export default function App() {
         variants: currentDraft.variants.filter((_, variantIndex) => variantIndex !== index),
       };
     });
+  };
+
+  const handleClearVariantImage = (index) => {
+    handleEditVariantField(index, "image", "");
   };
 
   const handleEditVariantImageFile = (index, event) => {
@@ -1209,6 +1222,7 @@ export default function App() {
     }
 
     const hasFlavorVariants = productHasFlavorVariants(editingProductDraft.productType);
+    const lineImage = editingProductDraft.image.trim() || DEFAULT_PRODUCT_IMAGE;
     const sanitizedVariants = hasFlavorVariants
       ? sanitizeVariants(
           (editingProductDraft.variants ?? []).map((variant) => ({
@@ -1222,7 +1236,12 @@ export default function App() {
               .filter(Boolean),
             isVegan: variant.isVegan,
             outOfStock: variant.outOfStock,
-          }))
+          })),
+          {
+            defaultImage: lineImage,
+            lineImage,
+            productType: editingProductDraft.productType,
+          }
         )
       : [];
 
@@ -1674,6 +1693,7 @@ export default function App() {
             onAddNewProductVariant={handleAddNewProductVariant}
             onRemoveNewProductVariant={handleRemoveNewProductVariant}
             onNewProductVariantImageFile={handleNewProductVariantImageFile}
+            onClearNewProductVariantImage={handleClearNewProductVariantImage}
             newProductImage={newProductImage}
             onNewProductImageChange={setNewProductImage}
             newProductIsVegan={newProductIsVegan}
@@ -1699,6 +1719,7 @@ export default function App() {
             onAddVariantToDraft={handleAddVariantToDraft}
             onRemoveVariantFromDraft={handleRemoveVariantFromDraft}
             onEditVariantImageFile={handleEditVariantImageFile}
+            onClearVariantImage={handleClearVariantImage}
             onSaveEditedProduct={handleSaveEditedProduct}
             onCancelEditProduct={handleCancelEditProduct}
             onDeleteProduct={handleDeleteProduct}

@@ -2,11 +2,11 @@ export function createDefaultNewProductPresentations() {
   return [{ label: "1kg", price: "" }];
 }
 
-export function createDefaultNewProductVariant(productId, image, index = 1) {
+export function createDefaultNewProductVariant(productId, _image, index = 1) {
   return {
     id: `${productId}-sabor-${index}`,
     label: "",
-    image: image || "",
+    image: "",
     description: "",
     contentsText: "",
     isVegan: false,

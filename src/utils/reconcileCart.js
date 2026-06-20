@@ -1,4 +1,5 @@
 import { productHasFlavorVariants } from "./sanitizeCatalog";
+import { resolveVariantImage } from "./variantImage.js";
 
 function buildCatalogIndexes(products) {
   const productById = new Map();
@@ -52,7 +53,7 @@ export function reconcileCartItems(cartItems, products) {
         lineId: line.id,
         flavorLabel: variant.label,
         name: `${line.name} — ${variant.label}`,
-        image: variant.image || line.image,
+        image: resolveVariantImage(variant, line),
         presentation: presentation.label,
         unitPrice: presentation.price,
       };

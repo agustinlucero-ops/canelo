@@ -2145,3 +2145,15 @@ input[type="number"] {
 .flavor-line-edit-modal .product-edit-preview {
   padding: 0.75rem;
 }
+
+.admin-field-hint {
+  margin: 0;
+  color: #5a6a5a;
+  font-size: 0.85rem;
+}
+
+.flavor-variant-image-override {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}

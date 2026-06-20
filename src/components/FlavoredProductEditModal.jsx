@@ -14,7 +14,7 @@ function draftToPreviewProduct(draft) {
   const variants = (draft.variants ?? []).map((variant, index) => ({
     id: String(variant.id ?? "").trim() || `sabor-${index + 1}`,
     label: String(variant.label ?? "").trim() || "Sabor",
-    image: String(variant.image ?? "").trim() || draft.image,
+    image: "",
     outOfStock: Boolean(variant.outOfStock),
   }));
 
@@ -26,7 +26,7 @@ function draftToPreviewProduct(draft) {
     image: draft.image.trim() || "/images/products/mani.svg",
     outOfStock: Boolean(draft.outOfStock),
     presentations: presentations.length ? presentations : [{ label: "1kg", price: 1 }],
-    variants: variants.length ? variants : [{ id: "sabor-1", label: "Sabor", image: draft.image }],
+    variants: variants.length ? variants : [{ id: "sabor-1", label: "Sabor", image: "" }],
   };
 }
 

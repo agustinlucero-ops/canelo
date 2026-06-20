@@ -45,6 +45,29 @@ describe("FlavorPickerPanel", () => {
     expect(html).toContain("$9.500");
   });
 
+  it("muestra la foto de línea cuando el sabor hereda en lugar del placeholder legacy", () => {
+    const line = {
+      id: "mix-tropical",
+      name: "Mix tropical",
+      image: "data:image/jpeg;base64,LINE",
+      presentations: [{ label: "100g", price: 2700 }],
+      variants: [
+        {
+          id: "mix-tropical",
+          label: "Mix tropical",
+          image: "",
+          outOfStock: false,
+        },
+      ],
+    };
+
+    const html = renderToStaticMarkup(
+      <FlavorPickerPanel isOpen line={line} onClose={vi.fn()} onAddToCart={vi.fn()} />
+    );
+
+    expect(html).toContain("data:image/jpeg;base64,LINE");
+  });
+
   it("muestra chips de sabor y agregar al carrito para líneas de producto", () => {
     const html = renderToStaticMarkup(
       <FlavorPickerPanel isOpen line={line} onClose={vi.fn()} onAddToCart={vi.fn()} />

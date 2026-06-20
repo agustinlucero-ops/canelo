@@ -51,6 +51,8 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | **Sabor**                 | Opción dentro de una línea o de un producto con sabores                                    | Variante, presentación       |
 | **Aclaración de estante** | Texto corto opcional bajo el nombre en producto **simple** (máx. 50 caracteres)            | Subtítulo, descripción larga |
 | **Indicación de sin stock en tarjeta** | En la tienda, el producto o línea sin stock se comunica en el botón principal de la tarjeta («Sin stock»), no con cartel sobre la foto | No disponible (en botón de catálogo) |
+| **Foto de línea** | Imagen principal del producto o de la **Línea de producto**; la usan todos los **Sabores** salvo override | Foto del producto, imagen padre |
+| **Foto del sabor** | Imagen opcional de un **Sabor** concreto en **Línea de producto**; si falta, se muestra la **Foto de línea**; en **Gestión** el campo queda colapsado salvo que el dueño pida override | Foto por variante, imagen del sabor |
 
 
 ### Categorías y navegación
@@ -105,6 +107,14 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 - **Gesto atrás** en **Catálogo en foco** → puede abandonar el sitio; si el **Carrito** tiene productos, muestra **Confirmación de salida** antes (también al cerrar pestaña o recargar).
 - **Línea de producto** → uno o más **Sabores** → panel lateral → carrito con id de sabor.
 - **Producto con sabores** → uno o más **Sabores** → elección en tarjeta → carrito con id de sabor.
+- **Foto de línea** → compartida por todos los **Sabores**; en **Producto con sabores** es la única foto.
+- **Foto del sabor** → solo en **Línea de producto**, y solo cuando el dueño la carga explícitamente.
+- **Sabores sin foto propia** → heredan la **Foto de línea** (no se duplica en datos); cambiar la foto de línea actualiza todos los sabores que heredan.
+- Productos ya publicados con foto duplicada o placeholder en sabores → se corrigen al mostrar en tienda y al volver a guardar desde **Gestión**.
+- **Foto del sabor** vacía, placeholder genérico o idéntica a la **Foto de línea** → no cuenta como override; el sabor hereda.
+- Cambiar la **Foto de línea** → actualiza solo sabores que heredan; los que tienen **Foto del sabor** (override real) no se tocan.
+- Quitar la **Foto del sabor** (override) → el sabor vuelve a heredar la **Foto de línea** de inmediato.
+- Reglas de **Foto de línea** / **Foto del sabor** → iguales en **Catálogo en línea**, **Gestión**, **Borrador** e **Importación** al publicar.
 - **Aclaración de estante** solo en productos `simple`; no en líneas ni productos con sabores.
 - Orden visible del catálogo = **Filtros de tienda** (fijos) + **Categorías de estante** (`sort_order`, flechas en admin).
 - Categoría referenciada solo por productos se registra automáticamente al final hasta que el dueño la reubique.
@@ -136,6 +146,7 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 | [0002](docs/adr/0002-category-display-order.md)   | Orden filtros + estantes      |
 | [0003](docs/adr/0003-flavor-selection-on-card.md) | `flavor-line` vs `flavored`   |
 | [0004](docs/adr/0004-back-navigation-and-cart-persistence.md) | Navegación atrás y persistencia del carrito |
+| [0005](docs/adr/0005-variant-image-inheritance.md) | Herencia de **Foto de línea** vs **Foto del sabor** |
 
 Registro de implementación: [docs/changelog/2026-05-27-estante-y-sabores.md](docs/changelog/2026-05-27-estante-y-sabores.md).
 

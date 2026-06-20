@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_PRODUCT_IMAGE,
   sanitizePresentations,
   sanitizeProducts,
   sanitizeShelfNote,
   sanitizeVariants,
 } from "./sanitizeCatalog";
+import { resolveVariantImage } from "./variantImage";
 
 describe("sanitizeShelfNote", () => {
   it("truncates text longer than 50 characters", () => {
@@ -134,6 +136,46 @@ describe("sanitizeProducts", () => {
     expect(line.variants[0].image).toContain("/images/");
   });
 
+  it("normaliza sabores legacy con placeholder para heredar la foto de línea", () => {
+    const [line] = sanitizeProducts([
+      {
+        id: "mix-tropical",
+        name: "Mix tropical",
+        category: "Mix frutos secos",
+        productType: "flavor-line",
+        image: "data:image/jpeg;base64,LINE",
+        presentations: [{ label: "100g", price: 2700 }],
+        variants: [
+          {
+            id: "mix-tropical",
+            label: "Mix tropical",
+            image: DEFAULT_PRODUCT_IMAGE,
+          },
+        ],
+      },
+    ]);
+
+    expect(line.variants[0].image).toBe("");
+    expect(resolveVariantImage(line.variants[0], line)).toBe("data:image/jpeg;base64,LINE");
+  });
+
+  it("producto con sabores no persiste foto por sabor", () => {
+    const [product] = sanitizeProducts([
+      {
+        id: "mani-saborizado",
+        name: "Mani saborizado",
+        category: "Maní suelto",
+        productType: "flavored",
+        image: "/images/products/mani.svg",
+        presentations: [{ label: "1kg", price: 7500 }],
+        variants: [{ id: "mani-bbq", label: "BBQ", image: "/images/products/mani.svg" }],
+      },
+    ]);
+
+    expect(product.variants[0].image).toBe("");
+    expect(resolveVariantImage(product.variants[0], product)).toBe("/images/products/mani.svg");
+  });
+
   it("keeps a flavored product with sabores en tarjeta", () => {
     const [product] = sanitizeProducts([
       {
@@ -149,7 +191,7 @@ describe("sanitizeProducts", () => {
     expect(product).toMatchObject({
       id: "mani-saborizado",
       productType: "flavored",
-      variants: [{ id: "mani-bbq", label: "BBQ" }],
+      variants: [{ id: "mani-bbq", label: "BBQ", image: "" }],
     });
   });
 });

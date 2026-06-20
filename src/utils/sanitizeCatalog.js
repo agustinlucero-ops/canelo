@@ -1,6 +1,7 @@
 import { normalizeProductName } from "./productName.js";
 import { normalizeCategoryLabel } from "./catalogCategories.js";
 import { resolveProductCategoryAndVegan } from "./productCategories.js";
+import { normalizeVariantImageForStorage } from "./variantImage.js";
 
 export const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
 
@@ -34,10 +35,14 @@ export function sanitizePresentations(presentations) {
     .filter(Boolean);
 }
 
-export function sanitizeVariants(variants, { defaultImage = DEFAULT_PRODUCT_IMAGE } = {}) {
+export function sanitizeVariants(
+  variants,
+  { defaultImage = DEFAULT_PRODUCT_IMAGE, lineImage = defaultImage, productType = null } = {}
+) {
   if (!Array.isArray(variants)) return [];
 
   const usedIds = new Set();
+  const normalizedLineImage = String(lineImage ?? "").trim() || defaultImage;
 
   return variants
     .map((variant, index) => {
@@ -50,7 +55,14 @@ export function sanitizeVariants(variants, { defaultImage = DEFAULT_PRODUCT_IMAG
         duplicateIndex += 1;
       }
       const label = String(variant?.label ?? "").trim();
-      const image = String(variant?.image ?? "").trim() || defaultImage;
+      let image;
+      if (productType === PRODUCT_TYPE_FLAVOR_LINE) {
+        image = normalizeVariantImageForStorage(variant?.image, normalizedLineImage);
+      } else if (productType === PRODUCT_TYPE_FLAVORED) {
+        image = "";
+      } else {
+        image = String(variant?.image ?? "").trim() || defaultImage;
+      }
       const description = String(variant?.description ?? "").trim();
       const contents = Array.isArray(variant?.contents)
         ? variant.contents.map((entry) => String(entry ?? "").trim()).filter(Boolean)
@@ -94,7 +106,11 @@ export function sanitizeProducts(productList, { defaultImage = DEFAULT_PRODUCT_I
       const image = String(product?.image ?? "").trim() || defaultImage;
       const productType = normalizeProductType(product?.productType);
       const presentations = sanitizePresentations(product?.presentations);
-      const variants = sanitizeVariants(product?.variants, { defaultImage });
+      const variants = sanitizeVariants(product?.variants, {
+        defaultImage,
+        lineImage: image,
+        productType: productHasFlavorVariants(productType) ? productType : null,
+      });
 
       if (productHasFlavorVariants(productType)) {
         if (!name || !presentations.length || !variants.length) return null;
