@@ -23,6 +23,20 @@ describe("cartReducer", () => {
     expect(second.items[0].quantity).toBe(2);
   });
 
+  it("cobra precio de venta cuando la presentación tiene descuento", () => {
+    const state = cartReducer(cartInitialState, {
+      type: "ADD_ITEM",
+      payload: {
+        product,
+        presentation: { label: "500g", price: 16000, discountPercent: 10 },
+      },
+    });
+
+    expect(state.items[0].unitPrice).toBe(14400);
+    expect(state.items[0].listPrice).toBe(16000);
+    expect(state.items[0].discountPercent).toBe(10);
+  });
+
   it("adds a flavor-line item with line and flavor in the name", () => {
     const state = cartReducer(cartInitialState, {
       type: "ADD_FLAVOR_LINE_ITEM",

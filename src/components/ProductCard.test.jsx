@@ -60,4 +60,26 @@ describe("ProductCard", () => {
 
     expect(html).not.toContain("product-stock-badge");
   });
+
+  it("muestra etiqueta de promoción y precios promocionales en la presentación visible", () => {
+    const html = renderToStaticMarkup(
+      <ProductCard
+        product={{
+          ...product,
+          presentations: [{ label: "500g", price: 16000, discountPercent: 10 }],
+        }}
+        onAddToCart={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('class="product-promo-badge"');
+    expect(html).toContain("10% OFF");
+    expect(html).toContain('class="product-price-list"');
+    expect(html).toContain("$14.400");
+
+    const mediaEnd = html.indexOf("</div>", html.indexOf('class="product-media"'));
+    const badgeIndex = html.indexOf('class="product-promo-badge"');
+    expect(badgeIndex).toBeGreaterThan(0);
+    expect(badgeIndex).toBeLessThan(mediaEnd);
+  });
 });

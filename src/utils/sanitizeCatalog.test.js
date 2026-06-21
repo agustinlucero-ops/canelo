@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_PRODUCT_IMAGE,
+  InvalidPresentationDiscountError,
   sanitizePresentations,
   sanitizeProducts,
   sanitizeShelfNote,
@@ -29,6 +30,44 @@ describe("sanitizePresentations", () => {
       { label: "500g", price: 2500 },
     ]);
   });
+
+  it("conserva descuento por presentación válido al sanitizar catálogo", () => {
+    const result = sanitizePresentations([
+      { label: "500g", price: 16000, discountPercent: 10 },
+    ]);
+
+    expect(result).toEqual([{ label: "500g", price: 16000, discountPercent: 10 }]);
+  });
+
+  it("hereda descuento existente cuando la presentación importada no lo trae", () => {
+    const result = sanitizePresentations([{ label: "500g", price: 17000 }], {
+      existingPresentations: [{ label: "500g", price: 16000, discountPercent: 10 }],
+    });
+
+    expect(result).toEqual([{ label: "500g", price: 17000, discountPercent: 10 }]);
+  });
+
+  it("quita promo cuando llega discountPercent null", () => {
+    const result = sanitizePresentations([{ label: "500g", price: 16000, discountPercent: null }], {
+      existingPresentations: [{ label: "500g", price: 16000, discountPercent: 10 }],
+    });
+
+    expect(result).toEqual([{ label: "500g", price: 16000 }]);
+  });
+
+  it("rechaza descuento inválido explícito al guardar desde gestión", () => {
+    expect(() =>
+      sanitizePresentations([{ label: "500g", price: 16000, discountPercent: 150 }], {
+        rejectInvalidDiscount: true,
+      })
+    ).toThrow(InvalidPresentationDiscountError);
+  });
+
+  it("descarta descuento corrupto al leer catálogo sin rechazar la presentación", () => {
+    const result = sanitizePresentations([{ label: "500g", price: 16000, discountPercent: 150 }]);
+
+    expect(result).toEqual([{ label: "500g", price: 16000 }]);
+  });
 });
 
 describe("sanitizeVariants", () => {
@@ -52,7 +91,7 @@ describe("sanitizeProducts", () => {
         id: "almendra",
         name: "Almendra",
         category: "Frutos secos",
-        presentations: [{ label: "1kg", price: 10000 }],
+        presentations: [{ label: "1kg", price: 10000, discountPercent: 15 }],
         isVegan: true,
       },
     ]);
@@ -61,7 +100,7 @@ describe("sanitizeProducts", () => {
       id: "almendra",
       category: "Frutos secos",
       isVegan: true,
-      presentations: [{ label: "1kg", price: 10000 }],
+      presentations: [{ label: "1kg", price: 10000, discountPercent: 15 }],
     });
     expect(product.name).toBeTruthy();
     expect(product.image).toContain("/images/");

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Vegan, X } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
-import { formatPrice } from "../utils/whatsapp";
+import ProductPresentationPrice from "./ProductPresentationPrice";
 import { getFirstAvailableVariant } from "../utils/flavorLineCart";
 import { resolveVariantImage } from "../utils/variantImage";
 
@@ -159,7 +159,10 @@ export default function FlavorPickerPanel({
             </button>
           )}
           {currentPresentation && (
-            <p className="flavor-picker-price">{formatPrice(currentPresentation.price)}</p>
+            <ProductPresentationPrice
+              presentation={currentPresentation}
+              className="flavor-picker-price"
+            />
           )}
         </footer>
       </aside>

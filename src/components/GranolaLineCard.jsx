@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import QuantitySelector from "./QuantitySelector";
-import { formatPrice } from "../utils/whatsapp";
+import ProductPresentationPrice from "./ProductPresentationPrice";
+import ProductPromoBadge from "./ProductPromoBadge";
+import { resolvePresentationPricing } from "../utils/presentationPricing";
 import { normalizeProductName } from "../utils/productName";
 import { flavorLineShowsPresentationsOnCard } from "../utils/mixFrutosSecosShelf";
 
@@ -27,16 +29,20 @@ export default function GranolaLineCard({
     );
   }, [line.presentations, selectedPresentation, showPresentationsOnCard]);
 
+  const presentationPricing = useMemo(
+    () => (currentPresentation ? resolvePresentationPricing(currentPresentation) : null),
+    [currentPresentation]
+  );
+
   return (
     <article className="product-card granola-line-card">
       <div className="product-media">
         <img src={line.image} alt={displayName} className="product-image" loading="lazy" />
+        <ProductPromoBadge promoLabel={presentationPricing?.promoLabel ?? null} />
       </div>
       <div className="product-content">
         <h3>{displayName}</h3>
-        {currentPresentation && (
-          <p className="product-price">{formatPrice(currentPresentation.price)}</p>
-        )}
+        {currentPresentation && <ProductPresentationPrice presentation={currentPresentation} />}
 
         {showWeightSelector ? (
           <QuantitySelector

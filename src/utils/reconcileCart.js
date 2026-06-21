@@ -1,5 +1,17 @@
+import { buildCartPresentationFields } from "./cartItemPricing";
 import { productHasFlavorVariants } from "./sanitizeCatalog";
 import { resolveVariantImage } from "./variantImage.js";
+
+function cartItemMatchesCatalogSnapshot(item, nextItem) {
+  return (
+    nextItem.name === item.name &&
+    nextItem.image === item.image &&
+    nextItem.unitPrice === item.unitPrice &&
+    nextItem.listPrice === item.listPrice &&
+    (nextItem.discountPercent ?? null) === (item.discountPercent ?? null) &&
+    nextItem.presentation === item.presentation
+  );
+}
 
 function buildCatalogIndexes(products) {
   const productById = new Map();
@@ -47,6 +59,7 @@ export function reconcileCartItems(cartItems, products) {
         continue;
       }
 
+      const priceFields = buildCartPresentationFields(presentation);
       const nextItem = {
         ...item,
         key: `${variant.id}-${presentation.label}`,
@@ -55,15 +68,14 @@ export function reconcileCartItems(cartItems, products) {
         name: `${line.name} — ${variant.label}`,
         image: resolveVariantImage(variant, line),
         presentation: presentation.label,
-        unitPrice: presentation.price,
+        ...priceFields,
       };
 
-      if (
-        nextItem.name !== item.name ||
-        nextItem.image !== item.image ||
-        nextItem.unitPrice !== item.unitPrice ||
-        nextItem.presentation !== item.presentation
-      ) {
+      if (!priceFields.discountPercent) {
+        delete nextItem.discountPercent;
+      }
+
+      if (!cartItemMatchesCatalogSnapshot(item, nextItem)) {
         updatedCount += 1;
       }
 
@@ -85,21 +97,21 @@ export function reconcileCartItems(cartItems, products) {
       continue;
     }
 
+    const priceFields = buildCartPresentationFields(presentation);
     const nextItem = {
       ...item,
       key: `${product.id}-${presentation.label}`,
       name: product.name,
       image: product.image,
       presentation: presentation.label,
-      unitPrice: presentation.price,
+      ...priceFields,
     };
 
-    if (
-      nextItem.name !== item.name ||
-      nextItem.image !== item.image ||
-      nextItem.unitPrice !== item.unitPrice ||
-      nextItem.presentation !== item.presentation
-    ) {
+    if (!priceFields.discountPercent) {
+      delete nextItem.discountPercent;
+    }
+
+    if (!cartItemMatchesCatalogSnapshot(item, nextItem)) {
       updatedCount += 1;
     }
 

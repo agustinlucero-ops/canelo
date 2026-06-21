@@ -40,4 +40,29 @@ describe("CartDrawer", () => {
     expect(html).toContain("Restaurar");
     expect(html).toContain("Descartar");
   });
+
+  it("muestra precio tachado, venta y badge OFF en ítems con descuento", () => {
+    const html = renderToStaticMarkup(
+      <CartDrawer
+        {...baseProps}
+        items={[
+          {
+            key: "almendra-500g",
+            name: "Almendra",
+            presentation: "500g",
+            unitPrice: 14400,
+            listPrice: 16000,
+            discountPercent: 10,
+            quantity: 1,
+            image: "/images/products/almendra.svg",
+          },
+        ]}
+        totals={{ subtotal: 14400, total: 14400, totalItems: 1 }}
+      />
+    );
+
+    expect(html).toContain("product-price-list");
+    expect(html).toContain("10% OFF");
+    expect(html).toContain("c/u");
+  });
 });

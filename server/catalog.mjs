@@ -6,7 +6,7 @@ import {
   validateShelfCategoryReorder,
   ValidationError,
 } from "../src/utils/validateShelfCategoryReorder.js";
-import { sanitizeShelfNote } from "../src/utils/sanitizeCatalog.js";
+import { sanitizeShelfNote, sanitizePresentations, InvalidPresentationDiscountError } from "../src/utils/sanitizeCatalog.js";
 import { normalizeVariantImageForStorage } from "../src/utils/variantImage.js";
 
 const DEFAULT_PRODUCT_IMAGE = "/images/products/almendra.svg";
@@ -46,16 +46,22 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function normalizePresentations(presentations) {
-  if (!Array.isArray(presentations)) return [];
-  return presentations
-    .map((presentation) => {
-      const label = normalizeText(presentation?.label);
-      const price = Number(String(presentation?.price ?? "").replace(",", "."));
-      if (!label || Number.isNaN(price) || price <= 0) return null;
-      return { label, price: Math.round(price) };
-    })
-    .filter(Boolean);
+function normalizePresentations(presentations, { existingPresentations } = {}) {
+  try {
+    return sanitizePresentations(presentations, {
+      existingPresentations,
+      rejectInvalidDiscount: true,
+    });
+  } catch (err) {
+    if (err instanceof InvalidPresentationDiscountError) {
+      throw new CatalogError("invalid_discount", err.message);
+    }
+    throw err;
+  }
+}
+
+function normalizePresentationsForRead(presentations) {
+  return sanitizePresentations(presentations);
 }
 
 function normalizeProductType(value) {
@@ -132,7 +138,7 @@ function mapProductRow(row) {
     category: row.category,
     image: row.image,
     productType,
-    presentations: row.presentations,
+    presentations: normalizePresentationsForRead(row.presentations),
     variants: Array.isArray(row.variants) ? row.variants : [],
     isVegan: row.is_vegan,
     isKeto: row.is_keto,
@@ -398,8 +404,10 @@ async function buildProductPayload(sql, input, { baseProduct } = {}) {
 
   const normalizedPresentations =
     input?.presentations !== undefined
-      ? normalizePresentations(input.presentations)
-      : baseProduct?.presentations ?? [];
+      ? normalizePresentations(input.presentations, {
+          existingPresentations: baseProduct?.presentations,
+        })
+      : normalizePresentationsForRead(baseProduct?.presentations ?? []);
   const normalizedProductType =
     input?.productType !== undefined
       ? normalizeProductType(input.productType)

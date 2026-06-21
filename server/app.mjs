@@ -63,6 +63,7 @@ function sendApiError(res, err, defaultCode = "internal_error", defaultMessage =
       invalid_product_name: 400,
       invalid_product_category: 400,
       invalid_presentations: 400,
+      invalid_discount: 400,
       reserved_category: 400,
       default_category_protected: 400,
       category_not_found: 404,

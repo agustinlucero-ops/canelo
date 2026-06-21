@@ -31,7 +31,7 @@ export function CartProvider({ children }) {
 
   const reconcileWithCatalog = useCallback(
     (products) => {
-      const { items, removedCount } = reconcileCartItems(state.items, products);
+      const { items, removedCount, updatedCount } = reconcileCartItems(state.items, products);
       const isSame =
         items.length === state.items.length &&
         items.every((item, index) => {
@@ -40,6 +40,8 @@ export function CartProvider({ children }) {
             item.key === current.key &&
             item.name === current.name &&
             item.unitPrice === current.unitPrice &&
+            item.listPrice === current.listPrice &&
+            (item.discountPercent ?? null) === (current.discountPercent ?? null) &&
             item.image === current.image &&
             item.quantity === current.quantity &&
             item.presentation === current.presentation
@@ -50,7 +52,7 @@ export function CartProvider({ children }) {
         dispatch({ type: "RECONCILE_WITH_CATALOG", payload: { items } });
       }
 
-      return { removedCount };
+      return { removedCount, updatedCount };
     },
     [state.items]
   );

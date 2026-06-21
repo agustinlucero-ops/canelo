@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createOrder } from "../api/orders";
 import { runWhatsAppCheckout } from "../utils/cartWhatsAppCheckout";
 import { buildWhatsAppMessage, formatPrice, openWhatsAppLink } from "../utils/whatsapp";
+import CartItemPricing from "./CartItemPricing";
 
 const WHATSAPP_PHONE =
   import.meta.env.VITE_WHATSAPP_PHONE?.replace(/\D/g, "") || "5491122334455";
@@ -94,7 +95,7 @@ export default function CartDrawer({
                   <div className="cart-item-main">
                     <strong>{item.name}</strong>
                     <span>{item.presentation}</span>
-                    <span>{formatPrice(item.unitPrice)} c/u</span>
+                    <CartItemPricing item={item} />
                   </div>
 
                   <div className="cart-item-actions">

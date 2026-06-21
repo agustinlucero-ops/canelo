@@ -1,3 +1,5 @@
+import { itemHasCartDiscount } from "./cartItemPricing";
+
 const CURRENCY_FORMATTER = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -25,11 +27,15 @@ export function encodeWhatsAppText(text) {
   return Array.from(bytes, (byte) => `%${byte.toString(16).toUpperCase().padStart(2, "0")}`).join("");
 }
 
+export function formatCartLine(item) {
+  const lineTotal = item.unitPrice * item.quantity;
+  const promoSuffix = itemHasCartDiscount(item) ? ` (${item.discountPercent}% OFF)` : "";
+
+  return `${item.name} (${item.presentation}) x${item.quantity} ${SYMBOL.pointRight} ${formatPrice(lineTotal)}${promoSuffix}`;
+}
+
 export function buildWhatsAppMessage({ customerName, customerPhone, items, totals }) {
-  const productLines = items.map(
-    (item) =>
-      `${item.name} (${item.presentation}) ${SYMBOL.pointRight} ${formatPrice(item.unitPrice * item.quantity)}`
-  );
+  const productLines = items.map((item) => formatCartLine(item));
 
   return [
     `¡Hola! Les mando el pedido que armé en la web de Canelo ${SYMBOL.greenHeart}:`,

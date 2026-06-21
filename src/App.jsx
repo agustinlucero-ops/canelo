@@ -2,6 +2,7 @@
 import CatalogCategorySearch from "./components/CatalogCategorySearch";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
+import { getPromoStateForProduct } from "./components/AdminPromoTools";
 import ProductCard from "./components/ProductCard";
 import GranolaLineCard from "./components/GranolaLineCard";
 import FlavorLineCard from "./components/FlavorLineCard";
@@ -60,6 +61,11 @@ import {
   createDefaultNewProductVariants,
 } from "./utils/adminNewProductDefaults";
 import { validateAdminNewProduct } from "./utils/validateAdminNewProduct";
+import {
+  buildPromoPresentationUpdates,
+  resolvePromoPresentationLabel,
+  validatePromoDiscountInput,
+} from "./utils/adminPromo";
 import { CART_ADD_TOAST_MESSAGE } from "./utils/cartAddToast";
 import { createTimedNotice } from "./utils/timedNotice";
 import { buildAdminNewProduct } from "./utils/buildAdminNewProduct";
@@ -231,6 +237,14 @@ export default function App() {
   const [expandedAdminCategories, setExpandedAdminCategories] = useState(() => new Set());
   const [isCategoryToolsOpen, setIsCategoryToolsOpen] = useState(false);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isPromoToolsOpen, setIsPromoToolsOpen] = useState(false);
+  const [promoProductId, setPromoProductId] = useState(null);
+  const [promoSearchValue, setPromoSearchValue] = useState("");
+  const [promoSearchOpen, setPromoSearchOpen] = useState(false);
+  const [promoPresentationLabel, setPromoPresentationLabel] = useState("");
+  const [promoDiscountValue, setPromoDiscountValue] = useState("");
+  const [promoAdminError, setPromoAdminError] = useState("");
+  const [promoSuccessMessage, setPromoSuccessMessage] = useState("");
   const [newProductName, setNewProductName] = useState("");
   const [newProductShelfNote, setNewProductShelfNote] = useState("");
   const [newProductCategory, setNewProductCategory] = useState("Sin tacc");
@@ -522,13 +536,18 @@ export default function App() {
       return;
     }
 
-    const { removedCount } = reconcileWithCatalog(products);
+    const { removedCount, updatedCount } = reconcileWithCatalog(products);
     if (removedCount > 0) {
       setCartReconcileNotice(
         removedCount === 1
           ? "Quitamos 1 producto del carrito porque ya no está disponible."
           : `Quitamos ${removedCount} productos del carrito porque ya no están disponibles.`
       );
+      return;
+    }
+
+    if (updatedCount > 0) {
+      setCartReconcileNotice("Actualizamos precios en tu carrito según el catálogo vigente.");
       return;
     }
 
@@ -654,6 +673,27 @@ export default function App() {
   const hasCatalogSearchSuggestions =
     catalogSearchSuggestions.categories.length > 0 ||
     catalogSearchSuggestions.products.length > 0;
+
+  const promoProduct = useMemo(
+    () => products.find((product) => product.id === promoProductId) ?? null,
+    [products, promoProductId]
+  );
+
+  const promoSearchProducts = useMemo(() => {
+    const normalizedSearch = promoSearchValue.trim().toLowerCase();
+    const matches = normalizedSearch
+      ? products.filter(
+          (product) =>
+            product.name.toLowerCase().includes(normalizedSearch) ||
+            product.category.toLowerCase().includes(normalizedSearch)
+        )
+      : products;
+
+    return matches.slice(0, 12);
+  }, [products, promoSearchValue]);
+
+  const promoSearchShowNoMatches =
+    promoSearchValue.trim().length > 0 && promoSearchProducts.length === 0;
 
   const categoryProductCount = useMemo(() => {
     return products.reduce((acc, product) => {
@@ -1005,6 +1045,99 @@ export default function App() {
       }
     }).catch((err) => {
       setProductAdminError(err?.message || "No se pudo eliminar el producto.");
+    });
+  };
+
+  const handleSelectPromoProduct = (product) => {
+    const nextState = getPromoStateForProduct(product, "");
+    setPromoProductId(product.id);
+    setPromoPresentationLabel(nextState.presentationLabel);
+    setPromoDiscountValue(nextState.discountValue);
+    setPromoSearchValue(product.name);
+    setPromoSearchOpen(false);
+    setPromoAdminError("");
+    setPromoSuccessMessage("");
+  };
+
+  const handlePromoPresentationLabelChange = (presentationLabel) => {
+    if (!promoProduct) {
+      setPromoPresentationLabel(presentationLabel);
+      return;
+    }
+
+    const presentation =
+      promoProduct.presentations.find((entry) => entry.label === presentationLabel) ??
+      promoProduct.presentations[0];
+    setPromoPresentationLabel(presentation?.label ?? presentationLabel);
+    setPromoDiscountValue(getPromoStateForProduct(promoProduct, presentationLabel).discountValue);
+    setPromoAdminError("");
+    setPromoSuccessMessage("");
+  };
+
+  const handleApplyPromo = async () => {
+    if (!ensureCatalogApiWritable()) return;
+    if (!promoProduct) {
+      setPromoAdminError("Elegí un producto.");
+      setPromoSuccessMessage("");
+      return;
+    }
+
+    const validation = validatePromoDiscountInput(promoDiscountValue);
+    if (!validation.ok) {
+      setPromoAdminError(validation.message);
+      setPromoSuccessMessage("");
+      return;
+    }
+
+    const presentationLabel = resolvePromoPresentationLabel(
+      promoProduct.presentations,
+      promoPresentationLabel
+    );
+    const presentations = buildPromoPresentationUpdates(
+      promoProduct,
+      presentationLabel,
+      validation.value
+    );
+
+    await withAdminPendingAction("apply-promo", async () => {
+      await updateProductApi(promoProduct.id, { presentations });
+      await refreshCatalogFromApi({ showRefreshing: true });
+      setPromoAdminError("");
+      setPromoSuccessMessage("Promo aplicada");
+      setPromoDiscountValue(String(validation.value));
+    }).catch((err) => {
+      setPromoAdminError(err?.message || "No se pudo aplicar la promo.");
+      setPromoSuccessMessage("");
+    });
+  };
+
+  const handleRemovePromo = async () => {
+    if (!ensureCatalogApiWritable()) return;
+    if (!promoProduct) {
+      setPromoAdminError("Elegí un producto.");
+      setPromoSuccessMessage("");
+      return;
+    }
+
+    const presentationLabel = resolvePromoPresentationLabel(
+      promoProduct.presentations,
+      promoPresentationLabel
+    );
+    const presentations = buildPromoPresentationUpdates(
+      promoProduct,
+      presentationLabel,
+      null
+    );
+
+    await withAdminPendingAction("remove-promo", async () => {
+      await updateProductApi(promoProduct.id, { presentations });
+      await refreshCatalogFromApi({ showRefreshing: true });
+      setPromoAdminError("");
+      setPromoSuccessMessage("Promo quitada");
+      setPromoDiscountValue("");
+    }).catch((err) => {
+      setPromoAdminError(err?.message || "No se pudo quitar la promo.");
+      setPromoSuccessMessage("");
     });
   };
 
@@ -1665,6 +1798,24 @@ export default function App() {
             onToggleCategoryTools={() => setIsCategoryToolsOpen((value) => !value)}
             isAddProductOpen={isAddProductOpen}
             onToggleAddProduct={() => setIsAddProductOpen((value) => !value)}
+            isPromoToolsOpen={isPromoToolsOpen}
+            onTogglePromoTools={() => setIsPromoToolsOpen((value) => !value)}
+            promoProduct={promoProduct}
+            promoSearchValue={promoSearchValue}
+            onPromoSearchChange={setPromoSearchValue}
+            promoSearchOpen={promoSearchOpen}
+            onPromoSearchOpenChange={setPromoSearchOpen}
+            promoSearchProducts={promoSearchProducts}
+            promoSearchShowNoMatches={promoSearchShowNoMatches}
+            onSelectPromoProduct={handleSelectPromoProduct}
+            promoPresentationLabel={promoPresentationLabel}
+            onPromoPresentationLabelChange={handlePromoPresentationLabelChange}
+            promoDiscountValue={promoDiscountValue}
+            onPromoDiscountChange={setPromoDiscountValue}
+            promoAdminError={promoAdminError}
+            promoSuccessMessage={promoSuccessMessage}
+            onApplyPromo={handleApplyPromo}
+            onRemovePromo={handleRemovePromo}
             newCategory={newCategory}
             onNewCategoryChange={setNewCategory}
             editingCategory={editingCategory}

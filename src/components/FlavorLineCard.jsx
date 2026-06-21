@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 import ProductNutritionBadges from "./ProductNutritionBadges";
-import { formatPrice } from "../utils/whatsapp";
+import ProductPresentationPrice from "./ProductPresentationPrice";
+import ProductPromoBadge from "./ProductPromoBadge";
+import { resolvePresentationPricing } from "../utils/presentationPricing";
 import { normalizeProductName } from "../utils/productName";
 import { getFirstAvailableVariant } from "../utils/flavorLineCart";
 
@@ -32,6 +34,11 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
     [line?.presentations, selectedPresentation]
   );
 
+  const presentationPricing = useMemo(
+    () => (currentPresentation ? resolvePresentationPricing(currentPresentation) : null),
+    [currentPresentation]
+  );
+
   const displayName = normalizeProductName(line.name, line.category);
   const canAdd =
     !preview &&
@@ -50,6 +57,7 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
     <article className="product-card flavor-line-card">
       <div className="product-media">
         <img src={line.image} alt={displayName} className="product-image" loading="lazy" />
+        <ProductPromoBadge promoLabel={presentationPricing?.promoLabel ?? null} />
       </div>
       <div className="product-content">
         <h3>{displayName}</h3>
@@ -58,9 +66,7 @@ export default function FlavorLineCard({ line, onAddToCart, preview = false }) {
           isKeto={line.isKeto}
           isGlutenFree={line.isGlutenFree}
         />
-        {currentPresentation && (
-          <p className="product-price">{formatPrice(currentPresentation.price)}</p>
-        )}
+        {currentPresentation && <ProductPresentationPrice presentation={currentPresentation} />}
 
         {preview ? (
           <p className="product-preview-note">Vista previa del catálogo</p>

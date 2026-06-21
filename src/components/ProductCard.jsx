@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 import ProductNutritionBadges from "./ProductNutritionBadges";
-import { formatPrice } from "../utils/whatsapp";
+import ProductPresentationPrice from "./ProductPresentationPrice";
+import ProductPromoBadge from "./ProductPromoBadge";
+import { resolvePresentationPricing } from "../utils/presentationPricing";
 import ProductTitleBlock from "./ProductTitleBlock";
 import { normalizeProductName } from "../utils/productName";
 
@@ -20,6 +22,11 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
         (presentation) => presentation.label === selectedPresentation
       ) ?? product.presentations[0],
     [product.presentations, selectedPresentation]
+  );
+
+  const presentationPricing = useMemo(
+    () => resolvePresentationPricing(currentPresentation),
+    [currentPresentation]
   );
 
   const displayName = useMemo(
@@ -41,6 +48,7 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
           className="product-image"
           loading="lazy"
         />
+        <ProductPromoBadge promoLabel={presentationPricing.promoLabel} />
       </div>
       <div className="product-content">
         <ProductTitleBlock
@@ -53,7 +61,7 @@ export default function ProductCard({ product, onAddToCart, preview = false }) {
           isKeto={product.isKeto}
           isGlutenFree={product.isGlutenFree}
         />
-        <p className="product-price">{formatPrice(currentPresentation.price)}</p>
+        <ProductPresentationPrice presentation={currentPresentation} />
 
         <QuantitySelector
           idPrefix={product.id}

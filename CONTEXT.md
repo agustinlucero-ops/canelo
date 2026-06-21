@@ -55,6 +55,8 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | **Foto del sabor** | Imagen opcional de un **Sabor** concreto en **Línea de producto**; si falta, se muestra la **Foto de línea**; en **Gestión** el campo queda colapsado salvo que el dueño pida override | Foto por variante, imagen del sabor |
 | **Insignia nutricional** | Icono de Veganos, Keto o Sin tacc en tarjeta o chip de **Sabor**; no tapa la **Foto de línea** | Badge, tag visual |
 | **Insignia por sabor** | Insignia nutricional ligada a un **Sabor** concreto (ej. Stevia vegana), no a toda la **Línea de producto** | Badge agregado, opción vegana |
+| **Etiqueta de promoción** | Cartel minimalista sobre la **Foto de línea** con el porcentaje activo (ej. «10% OFF»); alto contraste (fondo oscuro, texto claro); distinto de la **Insignia nutricional** | Badge, sticker, PROMO |
+| **Descuento por presentación** | Porcentaje entero opcional (1–99) en una **Presentación** concreta; aplica igual en producto **simple**, **Producto con sabores** y **Línea de producto**; el dueño lo carga solo desde **Gestión** | Promo global, rebaja de catálogo, 100% OFF |
 
 
 ### Categorías y navegación
@@ -64,7 +66,9 @@ Contexto del negocio: tienda dietética con catálogo web, carrito y pedidos por
 | ---------------------------- | --------------------------------------------------------------------------- | ------------------------- |
 | **Categoría de estante**     | Dónde vive el producto (Granolas, Frutos secos, Mix frutos secos); orden editable en Gestión | Sección, rubro            |
 | **Mix frutos secos**         | Estante de los mixes comerciales (energético, clásico, etc.), cada uno como producto propio | Subcategoría, combo       |
-| **Presentación**             | Peso o formato de venta (100g, 500g, 1kg) con su precio; distinto del **Sabor**; en **Producto con sabores**, una sola presentación se muestra fija; varias permiten elegir | Peso, tamaño, variante    |
+| **Presentación**             | Peso o formato de venta (100g, 500g, 1kg) con **Precio de lista** y **Descuento por presentación** opcional; distinto del **Sabor**; en **Producto con sabores**, una sola presentación se muestra fija; varias permiten elegir | Peso, tamaño, variante    |
+| **Precio de lista**          | Precio habitual de una **Presentación** antes de aplicar descuento; lo trae la **Importación** y el alta en **Gestión** | Precio original, precio base |
+| **Precio de venta**          | Lo que paga el cliente por una **Presentación**; entero en pesos; con **Descuento por presentación** activo es menor que el **Precio de lista** | Precio final, precio efectivo |
 | **Filtro de tienda**         | Criterio transversal (Sin tacc, Keto, Veganos); fijo al inicio del catálogo | Chip, tag como sustantivo |
 | **Tipo de archivo** (import) | Catálogo completo vs solo productos nuevos                                  | Modo, estrategia de diff  |
 
@@ -123,8 +127,27 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 - **Aclaración de estante** solo en productos `simple`; no en líneas ni productos con sabores.
 - Orden visible del catálogo = **Filtros de tienda** (fijos) + **Categorías de estante** (`sort_order`, flechas en admin).
 - Categoría referenciada solo por productos se registra automáticamente al final hasta que el dueño la reubique.
-
----
+- **Descuento por presentación** vive en la misma **Presentación** que su **Precio de lista**; sin descuento activo, la presentación solo tiene precio (sin campo de descuento).
+- **Importación** actualiza **Precio de lista**; no crea ni modifica **Descuento por presentación**; al **Publicar**, el descuento existente se conserva si la **Presentación** coincide por peso/formato.
+- Editar un producto sin tocar promos (modal de edición, foto, stock, etc.) no borra **Descuento por presentación** ya activo.
+- **Quitar promo** desde **Gestión** es una acción explícita del dueño; no ocurre por omisión al editar precio o al **Publicar**; afecta solo la **Presentación** elegida (en cualquier tipo de producto).
+- **Aplicar descuento** y **Quitar promo** en **Gestión** operan sobre una **Presentación** concreta; en **Línea de producto** no se replica automáticamente a otras presentaciones.
+- La lista de productos en **Gestión** indica **Descuento por presentación** activo junto al peso (ej. «500g: $16000 (10% OFF)»).
+- Tras **Aplicar descuento** o **Quitar promo**, la selección del producto permanece para facilitar promos en otras **Presentaciones** del mismo ítem.
+- **Aplicar descuento** es una herramienta colapsable en **Gestión**, separada del alta y la edición completa de productos.
+- **Etiqueta de promoción** → solo cuando hay **Descuento por presentación** activo en la **Presentación** visible; esquina superior izquierda de la **Foto de línea** en tarjeta de estante; texto «{n}% OFF» según el porcentaje guardado; no aparece en el panel lateral de **Sabores**.
+- **Precio de venta** = **Precio de lista** cuando no hay **Descuento por presentación** activo.
+- Con descuento activo, **Precio de venta** se calcula a partir del **Precio de lista** y el porcentaje; el **Carrito** cobra el **Precio de venta**.
+- Al agregar al **Carrito**, el ítem guarda **Precio de venta**, **Precio de lista** y **Descuento por presentación** de la **Presentación** elegida; lo que ve el cliente en tarjeta y lo que se cobra al agregar coinciden.
+- En el **Carrito**, una línea con promo muestra **Precio de lista** tachado, **Precio de venta** y el porcentaje activo; sin promo, solo **Precio de venta**.
+- Cada ítem del **Carrito** con promo guarda **Precio de venta**, **Precio de lista** y **Descuento por presentación** congelados al agregar.
+- En el pedido por WhatsApp, una línea con promo incluye cantidad, **Precio de venta** total de la línea y el porcentaje (ej. «Almendra (500g) x2 → $28.800 (10% OFF)»); sin promo, cantidad y total sin mención de descuento.
+- Si cambia el **Descuento por presentación** o el **Precio de lista** en el **Catálogo en línea**, los ítems ya en el **Carrito** se recalculan al catálogo vigente.
+- Restaurar el **Carrito anterior** repone ítems y cantidades, y luego aplica la misma recalculación al **Catálogo en línea** vigente.
+- Si la reconciliación del **Carrito** actualiza precios o promos sin quitar ítems, el cliente ve un aviso breve en el carrito («Actualizamos precios en tu carrito según el catálogo vigente.»).
+- Al registrar un pedido en base de datos, cada línea guarda solo el **Precio de venta** cobrado (`unit_price`); no se persiste **Precio de lista** ni **Descuento por presentación** en el pedido.
+- Con **Descuento por presentación** activo, la tarjeta muestra **Precio de lista** tachado y **Precio de venta** destacado en la misma línea; sin descuento, solo **Precio de venta**.
+- **Indicación de sin stock en tarjeta** no oculta **Descuento por presentación** activo; **Etiqueta de promoción** y precios promocionales siguen visibles.
 
 ## Diálogos de ejemplo
 
@@ -154,6 +177,18 @@ Presentaciones y precio son a nivel producto en los tres casos con sabores. El c
 | [0005](docs/adr/0005-variant-image-inheritance.md) | Herencia de **Foto de línea** vs **Foto del sabor** |
 
 Registro de implementación: [docs/changelog/2026-05-27-estante-y-sabores.md](docs/changelog/2026-05-27-estante-y-sabores.md).
+
+### Descuento por presentación (2026-06)
+
+Implementado en cinco fases:
+
+| Fase | Alcance | Módulos clave |
+| ---- | ------- | ------------- |
+| 1 — Datos | `discountPercent` opcional en `presentations[]`; merge al publicar | `sanitizeCatalog.js`, `server/catalog.mjs` |
+| 2 — Precio | **Precio de venta** desde **Precio de lista** + descuento | `presentationPricing.js` |
+| 3 — Gestión | **Aplicar descuento** / **Quitar promo** por presentación | `AdminPromoTools.jsx`, `adminPromo.js` |
+| 4 — Catálogo | **Etiqueta de promoción** y precios tachados en tarjetas | `ProductPromoBadge.jsx`, `ProductPresentationPrice.jsx` |
+| 5 — Carrito | Metadata congelada, drawer promo, WhatsApp, reconciliación | `cartItemPricing.js`, `reconcileCart.js`, `CartItemPricing.jsx`, `whatsapp.js` |
 
 ---
 

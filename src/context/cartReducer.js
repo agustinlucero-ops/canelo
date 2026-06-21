@@ -1,3 +1,4 @@
+import { buildCartPresentationFields } from "../utils/cartItemPricing";
 import { buildFlavorLineCartItem } from "../utils/flavorLineCart";
 
 export const cartInitialState = {
@@ -29,6 +30,7 @@ export function cartReducer(state, action) {
       const { product, presentation } = action.payload;
       const key = `${product.id}-${presentation.label}`;
       const existing = state.items.find((item) => item.key === key);
+      const priceFields = buildCartPresentationFields(presentation);
 
       if (existing) {
         return {
@@ -49,7 +51,7 @@ export function cartReducer(state, action) {
             name: product.name,
             image: product.image,
             presentation: presentation.label,
-            unitPrice: presentation.price,
+            ...priceFields,
             quantity: 1,
           },
         ],

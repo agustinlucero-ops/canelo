@@ -1,3 +1,4 @@
+import { buildCartPresentationFields } from "./cartItemPricing.js";
 import { resolveVariantImage } from "./variantImage.js";
 
 export function buildFlavorLineCartItem({ line, variant, presentation, quantity = 1 }) {
@@ -9,7 +10,7 @@ export function buildFlavorLineCartItem({ line, variant, presentation, quantity 
     name: `${line.name} — ${variant.label}`,
     image: resolveVariantImage(variant, line),
     presentation: presentation.label,
-    unitPrice: presentation.price,
+    ...buildCartPresentationFields(presentation),
     quantity,
   };
 }

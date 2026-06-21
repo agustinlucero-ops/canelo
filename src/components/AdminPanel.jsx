@@ -7,11 +7,10 @@ import CatalogImportPanel from "./CatalogImportPanel";
 import AdminPresentationsFields from "./AdminPresentationsFields";
 import AdminVariantsFields from "./AdminVariantsFields";
 import { productHasFlavorVariants } from "../utils/sanitizeCatalog";
+import { formatAdminPresentationsSummary } from "../utils/adminPromo";
 import { formatPrice } from "../utils/whatsapp";
+import AdminPromoTools from "./AdminPromoTools";
 
-function formatPresentationsSummary(presentations) {
-  return presentations.map((p) => `${p.label}: $${p.price}`).join(" · ");
-}
 
 function ProductListItem({ product, onStartEditProduct, onDeleteProduct, isActionDisabled }) {
   return (
@@ -20,7 +19,7 @@ function ProductListItem({ product, onStartEditProduct, onDeleteProduct, isActio
         <div className="admin-product-list-info">
           <span className="admin-product-list-name">{product.name}</span>
           <span className="admin-product-list-meta">
-            {formatPresentationsSummary(product.presentations)}
+            {formatAdminPresentationsSummary(product.presentations)}
             {product.isVegan && (
               <>
                 {" "}
@@ -204,6 +203,24 @@ export default function AdminPanel({
   onToggleCategoryTools,
   isAddProductOpen,
   onToggleAddProduct,
+  isPromoToolsOpen,
+  onTogglePromoTools,
+  promoProduct,
+  promoSearchValue,
+  onPromoSearchChange,
+  promoSearchOpen,
+  onPromoSearchOpenChange,
+  promoSearchProducts,
+  promoSearchShowNoMatches,
+  onSelectPromoProduct,
+  promoPresentationLabel,
+  onPromoPresentationLabelChange,
+  promoDiscountValue,
+  onPromoDiscountChange,
+  promoAdminError,
+  promoSuccessMessage,
+  onApplyPromo,
+  onRemovePromo,
   newCategory,
   onNewCategoryChange,
   editingCategory,
@@ -584,6 +601,32 @@ export default function AdminPanel({
         {productAdminError && !editingProductDraft && (
           <p className="admin-error">{productAdminError}</p>
         )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Aplicar descuento"
+        isOpen={isPromoToolsOpen}
+        onToggle={onTogglePromoTools}
+      >
+        <AdminPromoTools
+          promoProduct={promoProduct}
+          promoSearchValue={promoSearchValue}
+          onPromoSearchChange={onPromoSearchChange}
+          promoSearchOpen={promoSearchOpen}
+          onPromoSearchOpenChange={onPromoSearchOpenChange}
+          promoSearchProducts={promoSearchProducts}
+          promoSearchShowNoMatches={promoSearchShowNoMatches}
+          onSelectPromoProduct={onSelectPromoProduct}
+          promoPresentationLabel={promoPresentationLabel}
+          onPromoPresentationLabelChange={onPromoPresentationLabelChange}
+          promoDiscountValue={promoDiscountValue}
+          onPromoDiscountChange={onPromoDiscountChange}
+          promoAdminError={promoAdminError}
+          promoSuccessMessage={promoSuccessMessage}
+          onApplyPromo={onApplyPromo}
+          onRemovePromo={onRemovePromo}
+          isActionDisabled={isActionDisabled}
+        />
       </CollapsibleSection>
 
       <section className="admin-products-section">

@@ -31,7 +31,7 @@ describe("whatsapp utils", () => {
       [
         "¡Hola! Les mando el pedido que armé en la web de Canelo ♥:",
         "",
-        "Almendra (1kg) → $2.000",
+        "Almendra (1kg) x2 → $2.000",
         "",
         "Total: $2.000",
         "",
@@ -43,6 +43,26 @@ describe("whatsapp utils", () => {
       ].join("\n")
     );
     expect(message).not.toMatch(/\u{1F000}/u);
+  });
+
+  it("incluye cantidad y descuento en cada línea del pedido", () => {
+    const message = buildWhatsAppMessage({
+      customerName: "Ana",
+      customerPhone: "Av. Rivadavia 4521",
+      items: [
+        {
+          name: "Almendra",
+          presentation: "500g",
+          quantity: 2,
+          unitPrice: 14400,
+          listPrice: 16000,
+          discountPercent: 10,
+        },
+      ],
+      totals: { total: 28800 },
+    });
+
+    expect(message).toContain("Almendra (500g) x2 → $28.800 (10% OFF)");
   });
 
   it("encodes text as UTF-8 percent escapes", () => {
